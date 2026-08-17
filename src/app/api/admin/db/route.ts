@@ -6,30 +6,21 @@ import {
   normaliseOrder,
   normaliseProduct,
 } from "@/lib/db";
+import { adminAuthConfigured, requestIsAuthorised } from "@/lib/adminAuth";
 
 /**
  * Admin data API — backed by Neon Postgres.
  *
- * SECURITY NOTE: this endpoint is guarded by a single shared PIN sent in the
- * `x-admin-pin` header. That is weak protection: it is short, shared between
- * everyone who has it, and cannot be revoked for one person. Set ADMIN_PIN in
- * the environment so the real value is not committed to git, and plan to move
- * to proper per-user auth before this handles anything sensitive.
+ * AUTH: a signed httpOnly session cookie, issued by /api/admin/login once it
+ * has checked the PIN against ADMIN_PIN. There is no hardcoded fallback PIN:
+ * when ADMIN_PIN is unset this endpoint refuses everything rather than
+ * accepting a default. `src/middleware.ts` blocks unauthenticated requests
+ * before they reach here; the check below is the second layer.
+ *
+ * A single shared PIN is still coarse — it cannot be revoked for one person.
+ * Move to per-user auth before this handles anything more sensitive.
  */
-
-const FALLBACK_PIN = "1975";
-
-function pinIsValid(supplied: string | null): boolean {
-  const expected = process.env.ADMIN_PIN || FALLBACK_PIN;
-  if (!supplied || supplied.length !== expected.length) return false;
-
-  // Constant-time comparison so response timing cannot be used to guess the PIN.
-  let mismatch = 0;
-  for (let i = 0; i < expected.length; i++) {
-    mismatch |= supplied.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return mismatch === 0;
-}
+export const runtime = "nodejs";
 
 /**
  * Columns the dashboard is allowed to write, per table. Anything else in the
@@ -73,9 +64,19 @@ function pickWritable(table: string, data: unknown): Array<[string, unknown]> {
 
 export async function POST(request: Request) {
   try {
-    if (!pinIsValid(request.headers.get("x-admin-pin"))) {
+    if (!adminAuthConfigured()) {
       return NextResponse.json(
-        { error: "Unauthorized. Invalid Admin PIN." },
+        {
+          error:
+            "Admin access is not configured. Set ADMIN_PIN in the environment.",
+        },
+        { status: 503 }
+      );
+    }
+
+    if (!(await requestIsAuthorised(request))) {
+      return NextResponse.json(
+        { error: "Unauthorized. Sign in at /admin/login." },
         { status: 401 }
       );
     }

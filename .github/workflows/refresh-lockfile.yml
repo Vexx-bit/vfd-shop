@@ -1,0 +1,43 @@
+# Regenerates package-lock.json without needing a local checkout.
+#
+# Run it from the Actions tab ("Refresh lockfile" → Run workflow) after the
+# dependencies in package.json change. It resolves the tree and commits the
+# result back to the branch you ran it on.
+name: Refresh lockfile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # --package-lock-only resolves versions and rewrites the lockfile without
+      # running install scripts or building native modules.
+      - name: Resolve dependencies
+        run: npm install --package-lock-only
+
+      - name: Commit the lockfile
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "Lockfile is already in sync with package.json."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: regenerate package-lock.json"
+          git push
