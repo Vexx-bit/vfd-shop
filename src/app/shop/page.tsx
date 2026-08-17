@@ -4,9 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
-import { MonogramWatermark } from "@/components/BrandMark";
+import BrandedImage from "@/components/BrandedImage";
 import { useCart } from "@/app/providers";
-import { supabase } from "@/lib/supabase";
 import { ShoppingCart, Search, MessageCircle, CheckCircle } from "lucide-react";
 
 interface Product {
@@ -21,7 +20,8 @@ interface Product {
 }
 
 const WHATSAPP_NUMBER = "254706232927";
-const SITE_URL = "https://vfd-shop.vercel.app";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://vfd-shop.vercel.app";
 
 function absoluteImageUrl(url: string) {
   if (!url) return "";
@@ -29,10 +29,18 @@ function absoluteImageUrl(url: string) {
   return `${SITE_URL}${url.startsWith("/") ? url : `/${url}`}`;
 }
 
+/* Absolute URL to the watermarked copy, so a photo shared into WhatsApp still
+   carries the monogram after it has been forwarded around. */
+function brandedShareUrl(url: string) {
+  const absolute = absoluteImageUrl(url);
+  if (!absolute) return "";
+  return `${SITE_URL}/api/img?src=${encodeURIComponent(absolute)}&w=1200`;
+}
+
 /* One-tap WhatsApp order for a single product, with its photo embedded
    as a link so WhatsApp renders an image preview in the chat. */
 function orderOnWhatsApp(p: Product) {
-  const img = absoluteImageUrl(p.image_url);
+  const img = brandedShareUrl(p.image_url);
   const lines = [
     "Hello Victory Fashion! I'd like to order this item:",
     "",
@@ -46,7 +54,7 @@ function orderOnWhatsApp(p: Product) {
   lines.push("");
   lines.push("Please confirm availability. Thank you!");
   window.open(
-    `{{https://wa.me/${WHATSAPP_NUMBER}}}?text=${encodeURIComponent(lines.join("\n"))}`,
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`,
     "_blank"
   );
 }
@@ -145,23 +153,33 @@ export default function ShopPage() {
   const [addedId, setAddedId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchProducts() {
       try {
-        const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .eq("is_active", true);
+        // Postgres has no browser-safe client, so the catalogue comes from our
+        // own cached API route rather than straight from the database.
+        const response = await fetch("/api/products");
+        if (!response.ok) throw new Error(`Products API returned ${response.status}`);
 
-        if (error) throw error;
-        setProducts(data && data.length > 0 ? (data as Product[]) : fallbackProducts);
+        const payload = await response.json();
+        const list: Product[] = Array.isArray(payload?.products) ? payload.products : [];
+
+        if (!cancelled) {
+          setProducts(list.length > 0 ? list : fallbackProducts);
+        }
       } catch (err) {
-        console.error("Supabase products fetch failed:", err);
-        setProducts(fallbackProducts);
+        console.error("Products fetch failed:", err);
+        if (!cancelled) setProducts(fallbackProducts);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
+
     fetchProducts();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -295,13 +313,14 @@ export default function ShopPage() {
                     key={p.id}
                     className="bg-bg-secondary rounded-xl overflow-hidden border border-border-custom shadow-soft card-lift flex flex-col"
                   >
-                    {/* Image — watermarked with the VFD monogram so shared
-                        photos always carry the brand */}
+                    {/* Image — the monogram is composited into the file itself by
+                        /api/img, so it survives screenshots and re-uploads. */}
                     <div className="relative aspect-[3/4] overflow-hidden bg-bg-tertiary">
                       {p.image_url ? (
-                        <img
+                        <BrandedImage
                           src={p.image_url}
                           alt={p.name}
+                          w={800}
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
@@ -310,7 +329,6 @@ export default function ShopPage() {
                           <ShoppingCart size={36} />
                         </div>
                       )}
-                      <MonogramWatermark />
                       {p.badge && (
                         <span className="absolute top-2 left-2 bg-brand-gold text-brand-charcoal text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded z-10">
                           {p.badge}
