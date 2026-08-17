@@ -6,7 +6,13 @@ import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
 import BrandedImage from "@/components/BrandedImage";
 import { useCart } from "@/app/providers";
-import { ShoppingCart, Search, MessageCircle, CheckCircle } from "lucide-react";
+import {
+  ShoppingCart,
+  Search,
+  MessageCircle,
+  CheckCircle,
+  Share2,
+} from "lucide-react";
 
 interface Product {
   id: string;
@@ -20,8 +26,12 @@ interface Product {
 }
 
 const WHATSAPP_NUMBER = "254706232927";
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://vfd-shop.vercel.app";
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL || "https://vfd-shop.vercel.app"
+).replace(/\/+$/, "");
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function absoluteImageUrl(url: string) {
   if (!url) return "";
@@ -37,26 +47,66 @@ function brandedShareUrl(url: string) {
   return `${SITE_URL}/api/img?src=${encodeURIComponent(absolute)}&w=1200`;
 }
 
-/* One-tap WhatsApp order for a single product, with its photo embedded
-   as a link so WhatsApp renders an image preview in the chat. */
-function orderOnWhatsApp(p: Product) {
-  const img = brandedShareUrl(p.image_url);
-  const lines = [
-    "Hello Victory Fashion! I'd like to order this item:",
+/* Products loaded from the database have UUID ids and a real share page. The
+   offline fallback list does not, so those link to the shop instead of a 404. */
+function productShareUrl(p: Product) {
+  return UUID_RE.test(p.id) ? `${SITE_URL}/p/${p.id}` : `${SITE_URL}/shop`;
+}
+
+/* The link goes FIRST: WhatsApp only unfurls the first URL in a message, and
+   only /p/[id] carries the og: tags that make the photo appear as a card. */
+function orderMessage(p: Product) {
+  return [
+    productShareUrl(p),
     "",
+    "Hello Victory Fashion! I'd like to order this piece:",
     `${p.name} — KES ${p.price.toLocaleString()}`,
-    `Category: ${p.category}`,
-  ];
-  if (img) {
-    lines.push("");
-    lines.push(`Item Photo: ${img}`);
-  }
-  lines.push("");
-  lines.push("Please confirm availability. Thank you!");
+    "",
+    "Please confirm availability. Thank you!",
+  ].join("\n");
+}
+
+function orderOnWhatsApp(p: Product) {
   window.open(
-    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`,
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage(p))}`,
     "_blank"
   );
+}
+
+/* Native share sheet. On a phone this attaches the watermarked photo itself,
+   so the recipient sees the garment immediately instead of a link they have to
+   tap. Falls back to the WhatsApp link when file sharing is unavailable
+   (desktop browsers, mostly). */
+async function shareProduct(p: Product) {
+  try {
+    const source = brandedShareUrl(p.image_url);
+    if (source) {
+      const response = await fetch(source);
+      if (response.ok) {
+        const blob = await response.blob();
+        const slug =
+          p.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "victory-piece";
+        const file = new File([blob], `${slug}.jpg`, {
+          type: blob.type || "image/jpeg",
+        });
+
+        const shareData = { files: [file], text: orderMessage(p) };
+        const nav = navigator as Navigator & {
+          canShare?: (data: unknown) => boolean;
+        };
+
+        if (nav.canShare?.(shareData)) {
+          await nav.share(shareData as ShareData);
+          return;
+        }
+      }
+    }
+  } catch {
+    // User dismissed the sheet, or the browser refused the file. Either way the
+    // WhatsApp link below is a fine outcome.
+  }
+
+  orderOnWhatsApp(p);
 }
 
 const fallbackProducts: Product[] = [
@@ -229,7 +279,8 @@ export default function ShopPage() {
               Victory Shop
             </h1>
             <p className="text-text-secondary text-sm sm:text-base max-w-xl mx-auto mt-3 leading-relaxed">
-              Handcrafted pieces, ready to wear. Order on WhatsApp or pay instantly with M-Pesa.
+              Handcrafted pieces, ready to wear. Message us on WhatsApp to order
+              or to have anything made to your measurements.
             </p>
           </div>
         </section>
@@ -375,6 +426,14 @@ export default function ShopPage() {
                               <span>Add</span>
                             </>
                           )}
+                        </button>
+                        <button
+                          onClick={() => shareProduct(p)}
+                          className="tap-target px-2.5 py-2.5 rounded-lg bg-bg-tertiary border border-border-custom text-text-secondary hover:bg-bg-primary transition-colors flex items-center justify-center"
+                          aria-label={`Share ${p.name}`}
+                          title="Send this photo to someone"
+                        >
+                          <Share2 size={15} />
                         </button>
                         <button
                           onClick={() => orderOnWhatsApp(p)}
