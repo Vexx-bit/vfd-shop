@@ -4,6 +4,7 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
+import { MonogramWatermark } from "@/components/BrandMark";
 import Link from "next/link";
 import {
   Scissors,
@@ -15,7 +16,6 @@ import {
   MapPin,
   CheckCircle,
   ChevronRight,
-  Ruler,
   ShoppingBag,
   GraduationCap,
   MessageCircle,
@@ -134,6 +134,9 @@ export default function HomePage() {
                 <p className="text-base sm:text-lg text-text-secondary max-w-xl mx-auto lg:mx-0 leading-relaxed">
                   Led by Antonina Harrison, Master Tailor with 20 years of experience. High-end bespoke garments, and a training academy for the next generation of designers.
                 </p>
+                <p className="text-xs uppercase tracking-widest text-text-tertiary italic normal-case">
+                  where smartness matters
+                </p>
 
                 {/* Primary actions — Shop first (money), then WhatsApp, then Academy */}
                 <div className="flex flex-col gap-3 pt-2">
@@ -165,7 +168,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Hero image card */}
+              {/* Hero image card — watermarked */}
               <div className="relative mx-auto lg:ml-auto max-w-sm sm:max-w-md w-full">
                 <div className="relative rounded-2xl overflow-hidden aspect-[4/5] shadow-lift border-4 border-brand-cream dark:border-brand-charcoal">
                   <img
@@ -173,6 +176,7 @@ export default function HomePage() {
                     alt="Bespoke bridal gown by Victory Fashion Design"
                     className="w-full h-full object-cover"
                   />
+                  <MonogramWatermark />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-5 text-brand-cream">
                     <span className="text-[10px] uppercase tracking-widest text-brand-gold font-bold">
                       Bridal & Occasion Wear
@@ -312,8 +316,9 @@ export default function HomePage() {
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
+                  <MonogramWatermark />
                 </div>
-                <div className="absolute -bottom-5 -right-3 sm:-right-5 bg-brand-gold text-brand-charcoal p-3 sm:p-4 rounded-xl shadow-lift border-2 border-brand-cream text-center font-bold">
+                <div className="absolute -bottom-5 -right-3 sm:-right-5 bg-brand-gold text-brand-charcoal p-3 sm:p-4 rounded-xl shadow-lift border-2 border-brand-cream text-center font-bold z-10">
                   <div className="text-base sm:text-lg">Next Intake</div>
                   <div className="text-[10px] uppercase tracking-wider text-brand-plum font-extrabold">
                     Enrolling Now
@@ -324,7 +329,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ===== Portfolio showcase ===== */}
+        {/* ===== Portfolio showcase — watermarked ===== */}
         <section className="py-16 sm:py-20 bg-bg-primary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row items-center justify-between mb-10 gap-4 text-center sm:text-left">
@@ -357,6 +362,7 @@ export default function HomePage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
+                  <MonogramWatermark />
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/80 via-transparent to-transparent p-5 flex flex-col justify-end text-brand-cream">
                     <span className="text-[10px] uppercase tracking-wider text-brand-gold font-extrabold">
                       {item.category}
