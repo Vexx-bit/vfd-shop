@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { MapPin, Phone, Mail, Clock, ArrowUp, MessageCircle } from "lucide-react";
+import { BrandLogo } from "@/components/BrandMark";
 
 const quickLinks = [
   { label: "Home", href: "/" },
@@ -57,32 +58,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <svg
-                className="h-8 w-8 text-brand-gold"
-                viewBox="0 0 100 100"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M15 15 L50 85 L85 15"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <ellipse cx="50" cy="28" rx="2" ry="6" fill="#F6F1E7" />
-              </svg>
-              <div className="flex flex-col">
-                <span className="font-serif text-lg font-bold text-brand-plum dark:text-brand-gold">
-                  Victory Fashion
-                </span>
-                <span className="text-[9px] uppercase tracking-wider text-text-tertiary">
-                  Designers & Training
-                </span>
-              </div>
-            </div>
+            <Link href="/" className="inline-block group" aria-label="Victory Fashion Designers — home">
+              <BrandLogo showTagline />
+            </Link>
             <p className="text-sm leading-relaxed text-text-secondary">
               Transforming your fashion dreams into bespoke masterpieces since 2008. Ruiru's premier tailoring house and professional fashion academy.
             </p>
@@ -185,6 +163,7 @@ export default function Footer() {
           <p>
             &copy; {currentYear} Victory Fashion Designers & Training. All rights reserved.
           </p>
+          <p className="italic text-text-tertiary">where smartness matters</p>
           <div className="flex items-center gap-4">
             <p>
               Designed with ❤️ by{" "}
