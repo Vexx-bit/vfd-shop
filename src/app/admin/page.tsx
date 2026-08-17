@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Monogram } from "@/components/BrandMark";
 import {
-  Lock,
   LayoutDashboard,
   ShoppingBag,
   ListOrdered,
@@ -161,12 +161,14 @@ function BigButton({
   icon: Icon,
   children,
   disabled,
+  type = "button",
 }: {
   onClick: () => void;
   color: "green" | "red" | "gold" | "plain";
   icon?: any;
   children: React.ReactNode;
   disabled?: boolean;
+  type?: "button" | "submit";
 }) {
   const colors = {
     green: "bg-green-600 text-white hover:bg-green-700",
@@ -176,6 +178,7 @@ function BigButton({
   };
   return (
     <button
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={`tap-target w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50 ${colors[color]}`}
@@ -390,8 +393,11 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-bg-primary flex flex-col justify-center items-center px-4 py-10">
         <div className="max-w-md w-full bg-bg-secondary p-8 rounded-3xl border border-border-custom shadow-lift text-center space-y-6">
-          <div className="h-16 w-16 bg-brand-gold/15 rounded-full flex items-center justify-center text-brand-plum dark:text-brand-gold mx-auto">
-            <Lock size={30} />
+          <div className="flex justify-center">
+            <Monogram
+              className="h-20 w-24 text-brand-plum dark:text-brand-gold"
+              title="Victory Fashion Designers"
+            />
           </div>
           <div>
             <h1 className="font-serif text-3xl font-bold text-brand-plum dark:text-brand-gold">
@@ -425,6 +431,7 @@ export default function AdminPage() {
               Open Shop Manager
             </button>
           </form>
+          <p className="text-xs text-text-tertiary italic">where smartness matters</p>
         </div>
       </div>
     );
@@ -451,13 +458,16 @@ export default function AdminPage() {
       {/* ===== Top bar ===== */}
       <header className="sticky top-0 z-40 bg-bg-secondary/95 backdrop-blur-md border-b border-border-custom shadow-soft">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">
-              Victory Fashion
-            </span>
-            <h1 className="font-serif text-xl sm:text-2xl font-bold text-brand-plum dark:text-brand-gold leading-tight">
-              Shop Manager
-            </h1>
+          <div className="flex items-center gap-3">
+            <Monogram className="h-8 w-9 text-brand-plum dark:text-brand-gold shrink-0" />
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold block">
+                Victory Fashion
+              </span>
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-brand-plum dark:text-brand-gold leading-tight">
+                Shop Manager
+              </h1>
+            </div>
           </div>
           <div className="flex gap-2">
             <button
@@ -1107,7 +1117,7 @@ export default function AdminPage() {
                       key={idx}
                       type="button"
                       onClick={() => setProdImageUrl(img.url)}
-                      className={`relative rounded-xl overflow-hidden border-3 transition-all h-20 ${
+                      className={`relative rounded-xl overflow-hidden border-2 transition-all h-20 ${
                         prodImageUrl === img.url
                           ? "border-brand-gold ring-2 ring-brand-gold"
                           : "border-border-custom"
@@ -1196,11 +1206,9 @@ export default function AdminPage() {
               </button>
 
               <div className="pt-2 pb-safe">
-                <BigButton color="gold" onClick={() => {}} disabled={loading}>
+                <BigButton color="gold" type="submit" onClick={() => {}} disabled={loading}>
                   {loading ? "Saving..." : editingProduct ? "Save Changes" : "Add to Shop"}
                 </BigButton>
-                {/* real submit handled by hidden submit to keep BigButton simple */}
-                <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
               </div>
             </form>
           </div>
