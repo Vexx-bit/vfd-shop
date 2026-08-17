@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
-import { useCart, CartItem } from "@/app/providers";
-import { supabase } from "@/lib/supabase";
-import { ShoppingCart, Search, Filter } from "lucide-react";
+import BrandedImage from "@/components/BrandedImage";
+import { useCart } from "@/app/providers";
+import { ShoppingCart, Search, MessageCircle, CheckCircle } from "lucide-react";
 
 interface Product {
   id: string;
@@ -17,6 +17,46 @@ interface Product {
   image_url: string;
   badge?: string;
   stock_quantity: number;
+}
+
+const WHATSAPP_NUMBER = "254706232927";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://vfd-shop.vercel.app";
+
+function absoluteImageUrl(url: string) {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  return `${SITE_URL}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
+/* Absolute URL to the watermarked copy, so a photo shared into WhatsApp still
+   carries the monogram after it has been forwarded around. */
+function brandedShareUrl(url: string) {
+  const absolute = absoluteImageUrl(url);
+  if (!absolute) return "";
+  return `${SITE_URL}/api/img?src=${encodeURIComponent(absolute)}&w=1200`;
+}
+
+/* One-tap WhatsApp order for a single product, with its photo embedded
+   as a link so WhatsApp renders an image preview in the chat. */
+function orderOnWhatsApp(p: Product) {
+  const img = brandedShareUrl(p.image_url);
+  const lines = [
+    "Hello Victory Fashion! I'd like to order this item:",
+    "",
+    `${p.name} — KES ${p.price.toLocaleString()}`,
+    `Category: ${p.category}`,
+  ];
+  if (img) {
+    lines.push("");
+    lines.push(`Item Photo: ${img}`);
+  }
+  lines.push("");
+  lines.push("Please confirm availability. Thank you!");
+  window.open(
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`,
+    "_blank"
+  );
 }
 
 const fallbackProducts: Product[] = [
@@ -82,77 +122,154 @@ const fallbackProducts: Product[] = [
   },
 ];
 
+const categories = [
+  { value: "all", label: "All" },
+  { value: "dresses", label: "Dresses" },
+  { value: "tops", label: "Tops" },
+  { value: "two-pieces", label: "Co-ord Sets" },
+  { value: "skirts", label: "Skirts" },
+];
+
+function ProductSkeleton() {
+  return (
+    <div className="bg-bg-secondary rounded-xl overflow-hidden border border-border-custom">
+      <div className="skeleton aspect-[3/4]" />
+      <div className="p-3 space-y-2">
+        <div className="skeleton h-3 w-1/3 rounded" />
+        <div className="skeleton h-4 w-4/5 rounded" />
+        <div className="skeleton h-8 w-full rounded-lg mt-3" />
+      </div>
+    </div>
+  );
+}
+
 export default function ShopPage() {
   const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"featured" | "low" | "high">("featured");
+  const [addedId, setAddedId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchProducts() {
       try {
-        const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .eq("is_active", true);
+        // Postgres has no browser-safe client, so the catalogue comes from our
+        // own cached API route rather than straight from the database.
+        const response = await fetch("/api/products");
+        if (!response.ok) throw new Error(`Products API returned ${response.status}`);
 
-        if (error) throw error;
+        const payload = await response.json();
+        const list: Product[] = Array.isArray(payload?.products) ? payload.products : [];
 
-        if (data && data.length > 0) {
-          setProducts(data as Product[]);
-        } else {
-          // If Supabase table is empty, fall back to mock data
-          setProducts(fallbackProducts);
+        if (!cancelled) {
+          setProducts(list.length > 0 ? list : fallbackProducts);
         }
       } catch (err) {
-        console.error("Supabase products fetch failed:", err);
-        setProducts(fallbackProducts);
+        console.error("Products fetch failed:", err);
+        if (!cancelled) setProducts(fallbackProducts);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
+
     fetchProducts();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const categories = [
-    { value: "all", label: "All Items" },
-    { value: "dresses", label: "Dresses" },
-    { value: "tops", label: "Tops" },
-    { value: "two-pieces", label: "Co-ord Sets" },
-    { value: "skirts", label: "Skirts" },
-  ];
+  const filteredProducts = useMemo(() => {
+    let list =
+      category === "all" ? products : products.filter((p) => p.category === category);
 
-  const filteredProducts =
-    category === "all" ? products : products.filter((p) => p.category === category);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q)
+      );
+    }
+
+    if (sort === "low") list = [...list].sort((a, b) => a.price - b.price);
+    if (sort === "high") list = [...list].sort((a, b) => b.price - a.price);
+
+    return list;
+  }, [products, category, search, sort]);
+
+  const handleAdd = (p: Product) => {
+    addToCart({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      image_url: p.image_url,
+      category: p.category,
+    });
+    setAddedId(p.id);
+    setTimeout(() => setAddedId(null), 1200);
+  };
 
   return (
     <>
       <Navbar />
       <CartDrawer />
 
-      <main className="flex-1 pt-24 bg-bg-primary">
+      <main className="flex-1 pt-20 bg-bg-primary">
         {/* Header */}
-        <section className="py-12 bg-bg-secondary border-b border-border-custom text-center">
+        <section className="py-10 sm:py-14 bg-bg-secondary border-b border-border-custom text-center">
           <div className="max-w-4xl mx-auto px-4">
-            <span className="text-xs uppercase tracking-widest text-brand-gold font-bold">Ready-To-Wear</span>
-            <h1 className="font-serif text-4xl sm:text-5xl font-bold mt-2 text-brand-plum dark:text-brand-gold">
+            <span className="text-xs uppercase tracking-widest text-brand-gold font-bold">
+              Ready-To-Wear
+            </span>
+            <h1 className="font-serif text-3xl sm:text-5xl font-bold mt-2 text-brand-plum dark:text-brand-gold">
               Victory Shop
             </h1>
-            <p className="text-text-secondary text-sm sm:text-base max-w-xl mx-auto mt-4 leading-relaxed">
-              Curated collection of handcrafted pieces. Select your items and checkout with secure Lipa Na M-Pesa.
+            <p className="text-text-secondary text-sm sm:text-base max-w-xl mx-auto mt-3 leading-relaxed">
+              Handcrafted pieces, ready to wear. Order on WhatsApp or pay instantly with M-Pesa.
             </p>
           </div>
         </section>
 
-        {/* Filter Bar */}
-        <section className="py-6 border-b border-border-custom bg-bg-primary sticky top-16 z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap items-center justify-center gap-3">
+        {/* Sticky search + filter bar */}
+        <section className="py-3 border-b border-border-custom bg-bg-primary/95 backdrop-blur-md sticky top-16 lg:top-20 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+                />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search dresses, skirts..."
+                  className="w-full bg-bg-secondary border border-border-custom rounded-full pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-brand-gold"
+                  aria-label="Search products"
+                />
+              </div>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as any)}
+                className="bg-bg-secondary border border-border-custom rounded-full px-3 py-2.5 text-xs font-semibold text-text-secondary focus:outline-none focus:border-brand-gold"
+                aria-label="Sort products"
+              >
+                <option value="featured">Featured</option>
+                <option value="low">Price: Low → High</option>
+                <option value="high">Price: High → Low</option>
+              </select>
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center">
               {categories.map((cat) => (
                 <button
                   key={cat.value}
                   onClick={() => setCategory(cat.value)}
-                  className={`px-4 py-2 rounded-md font-bold text-xs uppercase tracking-wider transition-all ${
+                  className={`tap-target px-4 py-2 rounded-full font-bold text-xs uppercase tracking-wider whitespace-nowrap transition-all shrink-0 ${
                     category === cat.value
                       ? "bg-brand-plum text-brand-cream dark:bg-brand-gold dark:text-brand-charcoal"
                       : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary border border-border-custom"
@@ -165,80 +282,107 @@ export default function ShopPage() {
           </div>
         </section>
 
-        {/* Product Grid */}
-        <section className="py-12">
+        {/* Product Grid: 2-up on mobile like real fashion stores */}
+        <section className="py-8 sm:py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {loading ? (
-              <div className="py-20 flex justify-center items-center">
-                <div className="h-10 w-10 border-4 border-brand-gold border-t-transparent rounded-full animate-spin"></div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <ProductSkeleton key={i} />
+                ))}
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="py-20 text-center text-text-tertiary font-serif text-lg">
-                No items currently active in this category.
+              <div className="py-20 text-center">
+                <p className="font-serif text-lg text-text-tertiary">
+                  No items match your search.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setCategory("all");
+                  }}
+                  className="mt-4 text-sm font-bold text-brand-plum dark:text-brand-gold underline"
+                >
+                  Clear filters
+                </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
                 {filteredProducts.map((p) => (
                   <div
                     key={p.id}
-                    className="bg-bg-secondary rounded-xl overflow-hidden border border-border-custom shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                    className="bg-bg-secondary rounded-xl overflow-hidden border border-border-custom shadow-soft card-lift flex flex-col"
                   >
-                    {/* Image Area */}
-                    <div className="relative aspect-square overflow-hidden bg-bg-tertiary border-b border-border-custom">
+                    {/* Image — the monogram is composited into the file itself by
+                        /api/img, so it survives screenshots and re-uploads. */}
+                    <div className="relative aspect-[3/4] overflow-hidden bg-bg-tertiary">
                       {p.image_url ? (
-                        <img
+                        <BrandedImage
                           src={p.image_url}
                           alt={p.name}
-                          className="w-full h-full object-cover hover:scale-101 transition-transform duration-500"
+                          w={800}
+                          className="w-full h-full object-cover"
                           loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-text-tertiary">
-                          <ShoppingCart size={40} />
+                          <ShoppingCart size={36} />
                         </div>
                       )}
-                      
-                      {/* Badge */}
                       {p.badge && (
-                        <span className="absolute top-4 left-4 bg-brand-gold text-brand-charcoal text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded">
+                        <span className="absolute top-2 left-2 bg-brand-gold text-brand-charcoal text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded z-10">
                           {p.badge}
+                        </span>
+                      )}
+                      {p.stock_quantity <= 3 && p.stock_quantity > 0 && (
+                        <span className="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded z-10">
+                          Only {p.stock_quantity} left
                         </span>
                       )}
                     </div>
 
-                    {/* Info Area */}
-                    <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider capitalize">
-                          {p.category}
-                        </span>
-                        <h3 className="font-serif text-base sm:text-lg font-bold text-text-primary pr-2">
+                    {/* Info */}
+                    <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between gap-2">
+                      <div>
+                        <h3 className="font-serif text-sm sm:text-base font-bold text-text-primary line-clamp-1">
                           {p.name}
                         </h3>
-                        <p className="text-text-secondary text-xs sm:text-sm leading-relaxed line-clamp-2">
+                        <p className="text-text-secondary text-[11px] sm:text-xs leading-relaxed line-clamp-2 mt-1">
                           {p.description}
                         </p>
-                      </div>
-
-                      <div className="pt-4 border-t border-border-custom flex items-center justify-between">
-                        <span className="text-base font-bold text-brand-plum dark:text-brand-gold">
+                        <span className="block text-sm sm:text-base font-bold text-brand-plum dark:text-brand-gold mt-2">
                           KES {p.price.toLocaleString()}
                         </span>
+                      </div>
 
+                      <div className="flex gap-2 mt-2">
                         <button
-                          onClick={() =>
-                            addToCart({
-                              id: p.id,
-                              name: p.name,
-                              price: p.price,
-                              image_url: p.image_url,
-                              category: p.category,
-                            })
-                          }
-                          className="bg-brand-plum hover:bg-brand-plum/90 dark:bg-brand-gold dark:text-brand-charcoal text-brand-cream px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 shadow"
+                          onClick={() => handleAdd(p)}
+                          className={`flex-1 tap-target px-2 py-2.5 rounded-lg text-[11px] sm:text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1 transition-all ${
+                            addedId === p.id
+                              ? "bg-green-600 text-white"
+                              : "bg-brand-plum text-brand-cream dark:bg-brand-gold dark:text-brand-charcoal hover:opacity-90"
+                          }`}
                         >
-                          <ShoppingCart size={14} />
-                          <span>Add to Cart</span>
+                          {addedId === p.id ? (
+                            <>
+                              <CheckCircle size={13} />
+                              <span>Added</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingCart size={13} />
+                              <span>Add</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => orderOnWhatsApp(p)}
+                          className="tap-target px-2.5 py-2.5 rounded-lg bg-[#25D366]/10 border border-[#25D366]/40 text-[#1da851] dark:text-[#25D366] hover:bg-[#25D366]/20 transition-colors flex items-center justify-center"
+                          aria-label={`Order ${p.name} on WhatsApp`}
+                          title="Order this on WhatsApp"
+                        >
+                          <MessageCircle size={15} />
                         </button>
                       </div>
                     </div>

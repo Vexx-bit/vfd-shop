@@ -1,11 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import CartDrawer from "@/components/CartDrawer";
+import { Monogram } from "@/components/BrandMark";
 import {
-  Lock,
   LayoutDashboard,
   ShoppingBag,
   ListOrdered,
@@ -14,14 +11,24 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Check,
-  X,
   RefreshCw,
-  Search,
-  Filter,
-  DollarSign,
   AlertCircle,
+  Phone,
+  CheckCircle,
+  Clock,
+  XCircle,
+  LogOut,
 } from "lucide-react";
+
+/* ==========================================
+   VICTORY ADMIN — rebuilt for a non-technical
+   owner (Antonina). Design rules applied:
+   - Big text (base 16px+), huge tap targets
+   - Plain-English labels, zero jargon
+   - One obvious primary action per screen
+   - Cards instead of tables on mobile
+   - Everything colour-coded & forgiving
+   ========================================== */
 
 interface Product {
   id: string;
@@ -66,21 +73,15 @@ interface Order {
 interface Enrollment {
   id: string;
   full_name: string;
-  date_of_birth: string;
-  gender: string;
-  id_number: string;
-  email: string;
   phone: string;
-  address: string;
-  city: string;
   county: string;
-  education_level: string;
-  has_experience: string;
-  emergency_name: string;
-  emergency_relationship: string;
-  emergency_phone: string;
   intake_month: string;
   study_mode: string;
+  id_number: string;
+  education_level: string;
+  emergency_phone: string;
+  emergency_name: string;
+  has_experience: string;
   additional_info?: string;
   status: string;
   created_at: string;
@@ -97,58 +98,127 @@ interface Message {
   created_at: string;
 }
 
-// Curated Unsplash images of models with melanin-rich skin tones in premium designs
-const defaultMelaninImages = [
+type Tab = "dashboard" | "orders" | "products" | "enrollments" | "messages";
+
+const defaultImages = [
   {
-    label: "Melanin Ankara Gown",
+    label: "Ankara Gown",
     url: "https://images.unsplash.com/photo-1607823014134-2e6f9d2d0c26?w=800&auto=format&fit=crop&q=80",
   },
   {
-    label: "Melanin Bridal Gown Fitting",
+    label: "Bridal Fitting",
     url: "https://images.unsplash.com/photo-1594484208280-eae0044d6589?w=800&auto=format&fit=crop&q=80",
   },
   {
-    label: "Bespoke Suiting Textures",
+    label: "Suit Fabric",
     url: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80",
   },
   {
-    label: "Modern African Print Blazer",
+    label: "Print Blazer",
     url: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80",
   },
 ];
+
+/* Small reusable bits -------------------------------------- */
+
+function StatusChip({ kind, value }: { kind: "pay" | "order" | "form"; value: string }) {
+  const styles: Record<string, string> = {
+    paid: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400 border-green-300",
+    pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-400 border-yellow-300",
+    failed: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border-red-300",
+    completed: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400 border-green-300",
+    cancelled: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border-red-300",
+    approved: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400 border-green-300",
+    new: "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400 border-blue-300",
+    read: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-300",
+    replied: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400 border-green-300",
+  };
+  const labels: Record<string, string> = {
+    paid: "✅ PAID",
+    pending: kind === "pay" ? "⏳ NOT PAID YET" : "⏳ WAITING",
+    failed: "❌ PAYMENT FAILED",
+    completed: "✅ DONE",
+    cancelled: "❌ CANCELLED",
+    approved: "✅ APPROVED",
+    new: "🔵 NEW",
+    read: "👀 READ",
+    replied: "✅ REPLIED",
+  };
+  return (
+    <span
+      className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide border ${
+        styles[value] || styles.pending
+      }`}
+    >
+      {labels[value] || value}
+    </span>
+  );
+}
+
+function BigButton({
+  onClick,
+  color,
+  icon: Icon,
+  children,
+  disabled,
+  type = "button",
+}: {
+  onClick: () => void;
+  color: "green" | "red" | "gold" | "plain";
+  icon?: any;
+  children: React.ReactNode;
+  disabled?: boolean;
+  type?: "button" | "submit";
+}) {
+  const colors = {
+    green: "bg-green-600 text-white hover:bg-green-700",
+    red: "bg-red-600 text-white hover:bg-red-700",
+    gold: "bg-brand-gold text-brand-charcoal hover:bg-brand-gold/90",
+    plain: "bg-bg-tertiary text-text-primary hover:opacity-90 border border-border-custom",
+  };
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`tap-target w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50 ${colors[color]}`}
+    >
+      {Icon && <Icon size={18} />}
+      {children}
+    </button>
+  );
+}
+
+/* Main component ------------------------------------------- */
 
 export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState("");
-  const [activeTab, setActiveTab] = useState<"dashboard" | "orders" | "products" | "enrollments" | "messages">("dashboard");
+  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
-  // Database states
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // UI state
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [errorBanner, setErrorBanner] = useState("");
+  const [successNote, setSuccessNote] = useState("");
 
-  // Product CRUD states
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  
-  // Product Form states
+
   const [prodName, setProdName] = useState("");
   const [prodCategory, setProdCategory] = useState("dresses");
   const [prodPrice, setProdPrice] = useState("");
   const [prodDesc, setProdDesc] = useState("");
-  const [prodImageUrl, setProdImageUrl] = useState(defaultMelaninImages[0].url);
+  const [prodImageUrl, setProdImageUrl] = useState(defaultImages[0].url);
   const [prodBadge, setProdBadge] = useState("");
   const [prodStock, setProdStock] = useState("10");
   const [prodActive, setProdActive] = useState(true);
 
-  // Load auth session on mount
   useEffect(() => {
     const cachedPin = sessionStorage.getItem("vfd_admin_pin");
     if (cachedPin === "1975") {
@@ -156,6 +226,11 @@ export default function AdminPage() {
       fetchDashboardData(cachedPin);
     }
   }, []);
+
+  const showSuccess = (note: string) => {
+    setSuccessNote(note);
+    setTimeout(() => setSuccessNote(""), 3500);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,7 +240,7 @@ export default function AdminPage() {
       sessionStorage.setItem("vfd_admin_pin", "1975");
       fetchDashboardData("1975");
     } else {
-      setAuthError("Invalid Admin PIN. Access Denied.");
+      setAuthError("Wrong PIN. Please try again.");
       setPin("");
     }
   };
@@ -176,26 +251,20 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/db", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pin": authPin,
-        },
+        headers: { "Content-Type": "application/json", "x-admin-pin": authPin },
         body: JSON.stringify({ action: "fetch_all" }),
       });
-
       const result = await res.json();
-
       if (res.ok) {
         setProducts(result.products || []);
         setOrders(result.orders || []);
         setEnrollments(result.enrollments || []);
         setMessages(result.messages || []);
       } else {
-        throw new Error(result.error || "Failed to load dashboard statistics.");
+        throw new Error(result.error || "Failed to load.");
       }
     } catch (err: any) {
-      console.error(err);
-      setErrorBanner(err.message || "Failed to sync with Supabase database.");
+      setErrorBanner(err.message || "Could not connect to the database.");
     } finally {
       setLoading(false);
     }
@@ -207,54 +276,47 @@ export default function AdminPage() {
     setPin("");
   };
 
-  // CRUD: Product Save (Create or Update)
+  const adminPost = async (body: any) => {
+    const authPin = sessionStorage.getItem("vfd_admin_pin") || "";
+    const res = await fetch("/api/admin/db", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-pin": authPin },
+      body: JSON.stringify(body),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || "Action failed.");
+    return result;
+  };
+
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prodName || !prodPrice || !prodStock) {
-      alert("Please fill in all required fields.");
+      alert("Please fill in the name, price and stock number.");
       return;
     }
-
-    const payload = {
-      name: prodName,
-      category: prodCategory,
-      price: parseFloat(prodPrice),
-      description: prodDesc,
-      image_url: prodImageUrl || defaultMelaninImages[0].url,
-      badge: prodBadge || null,
-      stock_quantity: parseInt(prodStock),
-      is_active: prodActive,
-    };
-
     setLoading(true);
-    const authPin = sessionStorage.getItem("vfd_admin_pin") || "";
-
     try {
-      const res = await fetch("/api/admin/db", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pin": authPin,
+      await adminPost({
+        action: editingProduct ? "update" : "create",
+        table: "products",
+        id: editingProduct?.id,
+        data: {
+          name: prodName,
+          category: prodCategory,
+          price: parseFloat(prodPrice),
+          description: prodDesc,
+          image_url: prodImageUrl || defaultImages[0].url,
+          badge: prodBadge || null,
+          stock_quantity: parseInt(prodStock),
+          is_active: prodActive,
         },
-        body: JSON.stringify({
-          action: editingProduct ? "update" : "create",
-          table: "products",
-          id: editingProduct?.id,
-          data: payload,
-        }),
       });
-
-      const result = await res.json();
-      if (res.ok) {
-        setIsProductModalOpen(false);
-        setEditingProduct(null);
-        // Refresh
-        fetchDashboardData(authPin);
-      } else {
-        throw new Error(result.error || "Product update failed.");
-      }
+      setIsProductModalOpen(false);
+      setEditingProduct(null);
+      showSuccess(editingProduct ? "✅ Item updated!" : "✅ New item added to the shop!");
+      fetchDashboardData(sessionStorage.getItem("vfd_admin_pin") || "");
     } catch (err: any) {
-      alert(`Database Error: ${err.message}`);
+      alert(`Could not save: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -266,7 +328,7 @@ export default function AdminPage() {
     setProdCategory("dresses");
     setProdPrice("");
     setProdDesc("");
-    setProdImageUrl(defaultMelaninImages[0].url);
+    setProdImageUrl(defaultImages[0].url);
     setProdBadge("");
     setProdStock("10");
     setProdActive(true);
@@ -288,729 +350,727 @@ export default function AdminPage() {
 
   const handleSeedProducts = async () => {
     setLoading(true);
-    const authPin = sessionStorage.getItem("vfd_admin_pin") || "";
     try {
-      const res = await fetch("/api/admin/db", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pin": authPin,
-        },
-        body: JSON.stringify({
-          action: "seed",
-        }),
-      });
-
-      const result = await res.json();
-      if (res.ok) {
-        alert("🎉 Sample products seeded successfully!");
-        fetchDashboardData(authPin);
-      } else {
-        throw new Error(result.error || result.message || "Seeding failed.");
-      }
+      await adminPost({ action: "seed" });
+      showSuccess("🎉 Sample items added!");
+      fetchDashboardData(sessionStorage.getItem("vfd_admin_pin") || "");
     } catch (err: any) {
-      alert(`Database Error: ${err.message}`);
+      alert(`Could not add samples: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteProduct = async (prodId: string) => {
-    if (!confirm("Are you sure you want to delete this product? This is irreversible.")) return;
-
+  const deleteProduct = async (prodId: string, prodNameToDelete: string) => {
+    if (!confirm(`Remove "${prodNameToDelete}" from the shop? This cannot be undone.`)) return;
     setLoading(true);
-    const authPin = sessionStorage.getItem("vfd_admin_pin") || "";
-
     try {
-      const res = await fetch("/api/admin/db", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pin": authPin,
-        },
-        body: JSON.stringify({
-          action: "delete",
-          table: "products",
-          id: prodId,
-        }),
-      });
-
-      if (res.ok) {
-        fetchDashboardData(authPin);
-      } else {
-        const result = await res.json();
-        throw new Error(result.error || "Product deletion failed.");
-      }
+      await adminPost({ action: "delete", table: "products", id: prodId });
+      showSuccess("🗑️ Item removed.");
+      fetchDashboardData(sessionStorage.getItem("vfd_admin_pin") || "");
     } catch (err: any) {
-      alert(`Database Error: ${err.message}`);
+      alert(`Could not delete: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // CRUD: Update Order Status
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const quickUpdate = async (table: string, id: string, data: any, note: string) => {
     setLoading(true);
-    const authPin = sessionStorage.getItem("vfd_admin_pin") || "";
-
     try {
-      const res = await fetch("/api/admin/db", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pin": authPin,
-        },
-        body: JSON.stringify({
-          action: "update",
-          table: "orders",
-          id: orderId,
-          data: { status },
-        }),
-      });
-
-      if (res.ok) {
-        fetchDashboardData(authPin);
-      } else {
-        const result = await res.json();
-        throw new Error(result.error || "Order status update failed.");
-      }
+      await adminPost({ action: "update", table, id, data });
+      showSuccess(note);
+      fetchDashboardData(sessionStorage.getItem("vfd_admin_pin") || "");
     } catch (err: any) {
-      alert(`Database Error: ${err.message}`);
+      alert(`Could not update: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // CRUD: Update Order Payment Status
-  const updateOrderPaymentStatus = async (orderId: string, payment_status: string) => {
-    setLoading(true);
-    const authPin = sessionStorage.getItem("vfd_admin_pin") || "";
-
-    try {
-      const res = await fetch("/api/admin/db", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pin": authPin,
-        },
-        body: JSON.stringify({
-          action: "update",
-          table: "orders",
-          id: orderId,
-          data: { payment_status },
-        }),
-      });
-
-      if (res.ok) {
-        fetchDashboardData(authPin);
-      } else {
-        const result = await res.json();
-        throw new Error(result.error || "Payment status update failed.");
-      }
-    } catch (err: any) {
-      alert(`Database Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // CRUD: Update Enrollment Status
-  const updateEnrollmentStatus = async (enrolId: string, status: string) => {
-    setLoading(true);
-    const authPin = sessionStorage.getItem("vfd_admin_pin") || "";
-
-    try {
-      const res = await fetch("/api/admin/db", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pin": authPin,
-        },
-        body: JSON.stringify({
-          action: "update",
-          table: "enrollments",
-          id: enrolId,
-          data: { status },
-        }),
-      });
-
-      if (res.ok) {
-        fetchDashboardData(authPin);
-      } else {
-        const result = await res.json();
-        throw new Error(result.error || "Enrollment status update failed.");
-      }
-    } catch (err: any) {
-      alert(`Database Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // CRUD: Update Message Status
-  const updateMessageStatus = async (msgId: string, status: string) => {
-    setLoading(true);
-    const authPin = sessionStorage.getItem("vfd_admin_pin") || "";
-
-    try {
-      const res = await fetch("/api/admin/db", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-pin": authPin,
-        },
-        body: JSON.stringify({
-          action: "update",
-          table: "contact_messages",
-          id: msgId,
-          data: { status },
-        }),
-      });
-
-      if (res.ok) {
-        fetchDashboardData(authPin);
-      } else {
-        const result = await res.json();
-        throw new Error(result.error || "Message status update failed.");
-      }
-    } catch (err: any) {
-      alert(`Database Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  /* ===== LOGIN SCREEN ===== */
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-bg-primary flex flex-col justify-center items-center px-4">
-        <div className="max-w-md w-full bg-bg-secondary p-8 rounded-2xl border border-border-custom shadow-xl text-center space-y-6 stitch-border">
-          <div className="h-12 w-12 bg-brand-plum/15 dark:bg-brand-gold/15 rounded-full flex items-center justify-center text-brand-plum dark:text-brand-gold mx-auto">
-            <Lock size={22} />
+      <div className="min-h-screen bg-bg-primary flex flex-col justify-center items-center px-4 py-10">
+        <div className="max-w-md w-full bg-bg-secondary p-8 rounded-3xl border border-border-custom shadow-lift text-center space-y-6">
+          <div className="flex justify-center">
+            <Monogram
+              className="h-20 w-24 text-brand-plum dark:text-brand-gold"
+              title="Victory Fashion Designers"
+            />
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-bold text-brand-plum dark:text-brand-gold">
-              Victory CRM Access
+            <h1 className="font-serif text-3xl font-bold text-brand-plum dark:text-brand-gold">
+              Shop Manager
             </h1>
-            <p className="text-xs text-text-secondary mt-1">
-              Enter 4-digit administration PIN to manage inventory and student forms.
+            <p className="text-base text-text-secondary mt-2">
+              Type your 4-number PIN to open.
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <input
               type="password"
+              inputMode="numeric"
               maxLength={4}
               required
+              autoFocus
               value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="••••"
-              className="w-full text-center text-2xl tracking-widest bg-bg-primary border border-border-custom px-4 py-3 rounded-lg focus:outline-none focus:border-brand-gold font-mono"
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+              placeholder="• • • •"
+              aria-label="Admin PIN"
+              className="w-full text-center text-4xl tracking-[0.5em] bg-bg-primary border-2 border-border-custom px-4 py-5 rounded-2xl focus:outline-none focus:border-brand-gold font-mono"
             />
             {authError && (
-              <p className="text-xs text-red-500 font-semibold">{authError}</p>
+              <p className="text-base text-red-500 font-bold">{authError}</p>
             )}
             <button
               type="submit"
-              className="w-full bg-brand-plum dark:bg-brand-gold dark:text-brand-charcoal text-brand-cream py-3 rounded-md font-bold text-xs uppercase tracking-wider shadow"
+              className="tap-target w-full bg-brand-plum dark:bg-brand-gold dark:text-brand-charcoal text-brand-cream py-5 rounded-2xl font-bold text-lg shadow-soft"
             >
-              Authorize Fitting CRM
+              Open Shop Manager
             </button>
           </form>
+          <p className="text-xs text-text-tertiary italic">where smartness matters</p>
         </div>
       </div>
     );
   }
 
-  // Statistics calculations
+  /* ===== STATS ===== */
   const totalSales = orders
     .filter((o) => o.payment_status === "paid")
     .reduce((sum, o) => sum + Number(o.total), 0);
-
+  const unpaidOrders = orders.filter((o) => o.payment_status !== "paid" && o.status !== "cancelled").length;
   const pendingEnrollmentsCount = enrollments.filter((e) => e.status === "pending").length;
   const newMessagesCount = messages.filter((m) => m.status === "new").length;
 
-  return (
-    <>
-      <Navbar />
-      <CartDrawer />
+  const tabs: { id: Tab; label: string; icon: any; alert?: number }[] = [
+    { id: "dashboard", label: "Home", icon: LayoutDashboard },
+    { id: "orders", label: "Orders", icon: ListOrdered, alert: unpaidOrders },
+    { id: "products", label: "Shop Items", icon: ShoppingBag },
+    { id: "enrollments", label: "Students", icon: Users, alert: pendingEnrollmentsCount },
+    { id: "messages", label: "Messages", icon: MessageSquare, alert: newMessagesCount },
+  ];
 
-      <main className="flex-1 pt-24 bg-bg-primary">
-        {/* Header */}
-        <section className="py-8 bg-bg-secondary border-b border-border-custom">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+  return (
+    <div className="min-h-screen bg-bg-primary flex flex-col">
+      {/* ===== Top bar ===== */}
+      <header className="sticky top-0 z-40 bg-bg-secondary/95 backdrop-blur-md border-b border-border-custom shadow-soft">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Monogram className="h-8 w-9 text-brand-plum dark:text-brand-gold shrink-0" />
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">
-                Fittings CRM
+              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold block">
+                Victory Fashion
               </span>
-              <h1 className="font-serif text-3xl font-bold text-brand-plum dark:text-brand-gold">
-                Victory Admin Dashboard
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-brand-plum dark:text-brand-gold leading-tight">
+                Shop Manager
               </h1>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => fetchDashboardData(sessionStorage.getItem("vfd_admin_pin") || "")}
+              disabled={loading}
+              className="tap-target bg-bg-primary border border-border-custom text-text-primary px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="tap-target bg-red-50 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Log Out</span>
+            </button>
+          </div>
+        </div>
 
-            <div className="flex gap-2">
+        {/* Tab bar: horizontally scrollable big pills — works on phone */}
+        <div className="max-w-5xl mx-auto px-4 pb-3">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {tabs.map((t) => (
               <button
-                onClick={() => fetchDashboardData(sessionStorage.getItem("vfd_admin_pin") || "")}
-                disabled={loading}
-                className="bg-bg-primary hover:bg-bg-tertiary text-text-primary px-3 py-2 rounded-md border border-border-custom flex items-center gap-1.5 text-xs font-bold transition-all"
+                key={t.id}
+                onClick={() => {
+                  setActiveTab(t.id);
+                  setSearchTerm("");
+                }}
+                className={`tap-target relative flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold whitespace-nowrap shrink-0 transition-all ${
+                  activeTab === t.id
+                    ? "bg-brand-plum text-brand-cream dark:bg-brand-gold dark:text-brand-charcoal"
+                    : "bg-bg-primary border border-border-custom text-text-secondary"
+                }`}
               >
-                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                <span>Refresh Sync</span>
+                <t.icon size={18} />
+                <span>{t.label}</span>
+                {t.alert ? (
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold h-5 min-w-5 px-1 rounded-full flex items-center justify-center">
+                    {t.alert}
+                  </span>
+                ) : null}
               </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      {/* Banners */}
+      {successNote && (
+        <div className="max-w-5xl mx-auto px-4 mt-4 w-full">
+          <div className="bg-green-50 border-2 border-green-300 text-green-800 p-4 rounded-2xl text-base font-bold text-center">
+            {successNote}
+          </div>
+        </div>
+      )}
+      {errorBanner && (
+        <div className="max-w-5xl mx-auto px-4 mt-4 w-full">
+          <div className="bg-red-50 border-2 border-red-300 text-red-700 p-4 rounded-2xl flex items-center gap-3 text-base">
+            <AlertCircle size={22} className="shrink-0" />
+            <span>{errorBanner}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Main ===== */}
+      <main className="flex-1 max-w-5xl mx-auto px-4 py-6 w-full pb-24">
+
+        {/* ---- DASHBOARD ---- */}
+        {activeTab === "dashboard" && (
+          <div className="space-y-6">
+            <h2 className="font-serif text-2xl font-bold text-text-primary">
+              How is business today?
+            </h2>
+
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="bg-brand-plum text-brand-cream p-5 rounded-2xl shadow-soft col-span-2 sm:col-span-1">
+                <span className="text-sm font-semibold text-brand-cream/80">Money Collected</span>
+                <div className="text-3xl sm:text-4xl font-serif font-black text-brand-gold mt-1">
+                  KES {totalSales.toLocaleString()}
+                </div>
+                <span className="text-xs text-brand-cream/70">From paid orders</span>
+              </div>
+
               <button
-                onClick={handleLogout}
-                className="bg-red-950/20 text-red-600 hover:bg-red-600 hover:text-white px-3 py-2 rounded-md border border-red-500/30 text-xs font-bold transition-all"
+                onClick={() => setActiveTab("orders")}
+                className="bg-bg-secondary p-5 rounded-2xl border-2 border-border-custom text-left hover:border-brand-gold transition-colors"
               >
-                Log Out
+                <span className="text-sm font-semibold text-text-secondary">Orders Waiting</span>
+                <div className="text-3xl sm:text-4xl font-serif font-black text-brand-plum dark:text-brand-gold mt-1">
+                  {unpaidOrders}
+                </div>
+                <span className="text-xs text-text-tertiary">Tap to view →</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("enrollments")}
+                className="bg-bg-secondary p-5 rounded-2xl border-2 border-border-custom text-left hover:border-brand-gold transition-colors"
+              >
+                <span className="text-sm font-semibold text-text-secondary">New Students</span>
+                <div className="text-3xl sm:text-4xl font-serif font-black text-brand-plum dark:text-brand-gold mt-1">
+                  {pendingEnrollmentsCount}
+                </div>
+                <span className="text-xs text-text-tertiary">Waiting approval →</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("messages")}
+                className="bg-bg-secondary p-5 rounded-2xl border-2 border-border-custom text-left hover:border-brand-gold transition-colors"
+              >
+                <span className="text-sm font-semibold text-text-secondary">New Messages</span>
+                <div className="text-3xl sm:text-4xl font-serif font-black text-brand-plum dark:text-brand-gold mt-1">
+                  {newMessagesCount}
+                </div>
+                <span className="text-xs text-text-tertiary">Tap to read →</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("products")}
+                className="bg-bg-secondary p-5 rounded-2xl border-2 border-border-custom text-left hover:border-brand-gold transition-colors"
+              >
+                <span className="text-sm font-semibold text-text-secondary">Items in Shop</span>
+                <div className="text-3xl sm:text-4xl font-serif font-black text-brand-plum dark:text-brand-gold mt-1">
+                  {products.filter((p) => p.is_active).length}
+                </div>
+                <span className="text-xs text-text-tertiary">Tap to manage →</span>
               </button>
             </div>
-          </div>
-        </section>
 
-        {/* Error Banner */}
-        {errorBanner && (
-          <div className="max-w-7xl mx-auto px-4 mt-6">
-            <div className="bg-red-950/20 border border-red-500/30 text-red-600 p-4 rounded-xl flex items-center gap-2 text-xs">
-              <AlertCircle size={16} />
-              <span>{errorBanner}</span>
+            {/* Latest orders quick view */}
+            <div className="bg-bg-secondary rounded-2xl border border-border-custom p-5 space-y-3">
+              <h3 className="font-serif text-lg font-bold">Latest Orders</h3>
+              {orders.length === 0 ? (
+                <p className="text-text-tertiary text-sm py-4 text-center">
+                  No orders yet. They will appear here when customers buy.
+                </p>
+              ) : (
+                orders.slice(0, 3).map((ord) => (
+                  <div
+                    key={ord.id}
+                    className="flex justify-between items-center gap-3 p-4 rounded-xl bg-bg-primary border border-border-custom"
+                  >
+                    <div className="min-w-0">
+                      <span className="font-mono font-bold text-brand-plum dark:text-brand-gold text-sm">
+                        {ord.order_number}
+                      </span>
+                      <p className="text-sm text-text-secondary truncate">{ord.customer_name}</p>
+                    </div>
+                    <StatusChip kind="pay" value={ord.payment_status} />
+                  </div>
+                ))
+              )}
+              {orders.length > 3 && (
+                <BigButton color="plain" onClick={() => setActiveTab("orders")} icon={ListOrdered}>
+                  See All Orders
+                </BigButton>
+              )}
             </div>
           </div>
         )}
 
-        {/* Workspace Layout */}
-        <section className="py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* Sidebar Navigation */}
-            <div className="lg:col-span-3 bg-bg-secondary rounded-xl border border-border-custom p-4 flex flex-row overflow-x-auto gap-2 lg:flex-col lg:overflow-x-visible lg:gap-0 lg:space-y-2 scrollbar-none pb-3 lg:pb-4">
-              {[
-                { tab: "dashboard", label: "Overview", icon: LayoutDashboard },
-                { tab: "orders", label: "Orders", icon: ListOrdered },
-                { tab: "products", label: "Products", icon: ShoppingBag },
-                { tab: "enrollments", label: "Students", icon: Users },
-                { tab: "messages", label: "Messages", icon: MessageSquare },
-              ].map((item) => (
-                <button
-                  key={item.tab}
-                  onClick={() => {
-                    setActiveTab(item.tab as any);
-                    setSearchTerm("");
-                  }}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-all shrink-0 lg:w-full lg:px-4 lg:py-3 lg:gap-3 ${
-                    activeTab === item.tab
-                      ? "bg-brand-plum text-brand-cream dark:bg-brand-gold dark:text-brand-charcoal"
-                      : "text-text-secondary hover:bg-bg-tertiary"
-                  }`}
-                >
-                  <item.icon size={14} className="shrink-0" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
+        {/* ---- ORDERS ---- */}
+        {activeTab === "orders" && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <h2 className="font-serif text-2xl font-bold">Customer Orders</h2>
+              <input
+                type="search"
+                placeholder="Search name or order number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-bg-secondary border-2 border-border-custom px-4 py-3 rounded-xl text-base focus:outline-none focus:border-brand-gold w-full sm:w-72"
+              />
             </div>
 
-            {/* Main Tabs Panel */}
-            <div className="lg:col-span-9 bg-bg-secondary rounded-xl border border-border-custom p-6 min-h-[500px] shadow-sm">
-              
-              {/* Tab 1: Dashboard Overview */}
-              {activeTab === "dashboard" && (
-                <div className="space-y-6">
-                  <h2 className="font-serif text-lg font-bold border-b border-border-custom pb-2 text-brand-plum dark:text-brand-gold">
-                    Overview Analytics
-                  </h2>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[
-                      { label: "Total Paid Sales", val: `KES ${totalSales.toLocaleString()}`, desc: "From paid orders", icon: DollarSign },
-                      { label: "Active Inventory", val: products.length, desc: "Ready-to-wear items", icon: ShoppingBag },
-                      { label: "Pending Intake", val: pendingEnrollmentsCount, desc: "Awaiting approval", icon: Users },
-                      { label: "New Inquiries", val: newMessagesCount, desc: "Awaiting reading", icon: MessageSquare },
-                    ].map((card, idx) => (
-                      <div key={idx} className="bg-bg-primary p-4 rounded-xl border border-border-custom space-y-1 relative overflow-hidden">
-                        <card.icon size={40} className="absolute right-2 bottom-2 text-brand-gold/10 pointer-events-none" />
-                        <h4 className="text-[10px] text-text-tertiary uppercase tracking-wider font-extrabold">{card.label}</h4>
-                        <div className="text-xl font-serif font-black text-brand-plum dark:text-brand-gold">{card.val}</div>
-                        <p className="text-[9px] text-text-secondary">{card.desc}</p>
+            {orders.filter(
+              (o) =>
+                o.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                o.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
+              <div className="py-16 text-center text-text-tertiary bg-bg-secondary rounded-2xl border border-dashed border-border-custom">
+                <ListOrdered size={40} className="mx-auto mb-3 text-brand-gold" />
+                <p className="text-base font-semibold">No orders found.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders
+                  .filter(
+                    (o) =>
+                      o.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      o.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((o) => (
+                    <div
+                      key={o.id}
+                      className="bg-bg-secondary rounded-2xl border border-border-custom p-5 space-y-4 shadow-soft"
+                    >
+                      {/* Order head */}
+                      <div className="flex flex-wrap justify-between items-start gap-2">
+                        <div>
+                          <span className="font-mono font-black text-lg text-brand-plum dark:text-brand-gold">
+                            {o.order_number}
+                          </span>
+                          <p className="text-base font-bold text-text-primary mt-0.5">
+                            {o.customer_name}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <StatusChip kind="pay" value={o.payment_status} />
+                          <StatusChip kind="order" value={o.status} />
+                        </div>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Quick Activity feeds */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                    {/* Recent Orders */}
-                    <div className="bg-bg-primary p-5 rounded-xl border border-border-custom space-y-4">
-                      <h3 className="font-serif text-sm font-bold text-text-primary">Recent Orders</h3>
-                      <div className="space-y-2.5">
-                        {orders.slice(0, 4).map((ord) => (
-                          <div key={ord.id} className="flex justify-between items-center text-xs p-2.5 rounded bg-bg-secondary border border-border-custom">
-                            <div>
-                              <span className="font-mono font-bold text-brand-gold">{ord.order_number}</span>
-                              <p className="text-[10px] text-text-secondary">{ord.customer_name}</p>
+                      {/* Items */}
+                      {o.order_items && o.order_items.length > 0 && (
+                        <div className="bg-bg-primary rounded-xl p-4 space-y-1.5 border border-border-custom">
+                          {o.order_items.map((it) => (
+                            <div key={it.id} className="flex justify-between text-sm">
+                              <span className="text-text-primary">
+                                {it.product_name} × {it.quantity}
+                              </span>
+                              <span className="font-semibold">
+                                KES {(it.price * it.quantity).toLocaleString()}
+                              </span>
                             </div>
-                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                              ord.payment_status === "paid" ? "bg-green-950/20 text-green-500" : "bg-yellow-950/20 text-yellow-500"
-                            }`}>
-                              {ord.payment_status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Recent Student Applications */}
-                    <div className="bg-bg-primary p-5 rounded-xl border border-border-custom space-y-4">
-                      <h3 className="font-serif text-sm font-bold text-text-primary">Recent Academy Applicants</h3>
-                      <div className="space-y-2.5">
-                        {enrollments.slice(0, 4).map((enr) => (
-                          <div key={enr.id} className="flex justify-between items-center text-xs p-2.5 rounded bg-bg-secondary border border-border-custom">
-                            <div>
-                              <span className="font-bold text-text-primary">{enr.full_name}</span>
-                              <p className="text-[10px] text-text-secondary capitalize">{enr.study_mode} ({enr.intake_month})</p>
-                            </div>
-                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                              enr.status === "approved" ? "bg-green-950/20 text-green-500" : "bg-blue-950/20 text-blue-500"
-                            }`}>
-                              {enr.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 2: Orders Management */}
-              {activeTab === "orders" && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-border-custom pb-2">
-                    <h2 className="font-serif text-lg font-bold text-brand-plum dark:text-brand-gold">
-                      Orders Management
-                    </h2>
-                    <input
-                      type="text"
-                      placeholder="Search customer name or order #..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="bg-bg-primary border border-border-custom px-3 py-1.5 rounded text-xs focus:outline-none focus:border-brand-gold max-w-xs w-full"
-                    />
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-border-custom text-text-tertiary">
-                          <th className="py-2.5">Order No</th>
-                          <th>Customer</th>
-                          <th>Delivery Address</th>
-                          <th>Total</th>
-                          <th>Order Status</th>
-                          <th>Payment Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orders
-                          .filter((o) =>
-                            o.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            o.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
-                          )
-                          .map((o) => (
-                            <tr key={o.id} className="border-b border-border-custom hover:bg-bg-primary/50 transition-colors">
-                              <td className="py-3 font-mono font-bold text-brand-gold">{o.order_number}</td>
-                              <td>
-                                <div className="font-bold">{o.customer_name}</div>
-                                <div className="text-[10px] text-text-tertiary">{o.customer_phone}</div>
-                              </td>
-                              <td className="max-w-[150px] truncate">{o.delivery_address}</td>
-                              <td className="font-bold">KES {o.total.toLocaleString()}</td>
-                              <td>
-                                <select
-                                  value={o.status}
-                                  onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                                  className="bg-bg-primary border border-border-custom px-2 py-1 rounded text-[10px] text-text-primary"
-                                >
-                                  <option value="pending">Pending</option>
-                                  <option value="completed">Completed</option>
-                                  <option value="cancelled">Cancelled</option>
-                                </select>
-                              </td>
-                              <td>
-                                <select
-                                  value={o.payment_status}
-                                  onChange={(e) => updateOrderPaymentStatus(o.id, e.target.value)}
-                                  className="bg-bg-primary border border-border-custom px-2 py-1 rounded text-[10px] text-text-primary"
-                                >
-                                  <option value="pending">Pending</option>
-                                  <option value="paid">Paid</option>
-                                  <option value="failed">Failed</option>
-                                </select>
-                              </td>
-                            </tr>
                           ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                        </div>
+                      )}
 
-              {/* Tab 3: Products CRUD (Products List & Modal Form) */}
-              {activeTab === "products" && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-border-custom pb-2">
-                    <h2 className="font-serif text-lg font-bold text-brand-plum dark:text-brand-gold">
-                      Catalog Inventory (CRUD)
-                    </h2>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Search product name..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="bg-bg-primary border border-border-custom px-3 py-1.5 rounded text-xs focus:outline-none focus:border-brand-gold"
-                      />
-                      <button
-                        onClick={openAddProductModal}
-                        className="bg-brand-plum text-brand-cream dark:bg-brand-gold dark:text-brand-charcoal px-3 py-1.5 rounded flex items-center gap-1 text-xs font-bold shadow"
-                      >
-                        <Plus size={14} />
-                        <span>Add Product</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {products.length === 0 ? (
-                    <div className="py-12 border border-dashed border-border-custom rounded-xl text-center space-y-4 bg-bg-primary/50">
-                      <ShoppingBag size={32} className="text-brand-gold mx-auto" />
-                      <div className="space-y-1">
-                        <p className="font-serif text-sm font-bold">Catalog is Empty</p>
-                        <p className="text-xs text-text-secondary max-w-sm mx-auto">
-                          Seed the database with 6 ready-to-wear products featuring elegant melanin-tone models.
-                        </p>
+                      {/* Contact + address */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <a
+                          href={`tel:${o.customer_phone}`}
+                          className="flex items-center gap-2 p-3 rounded-xl bg-bg-primary border border-border-custom font-bold text-brand-plum dark:text-brand-gold tap-target"
+                        >
+                          <Phone size={16} /> {o.customer_phone}
+                        </a>
+                        <div className="flex items-center gap-2 p-3 rounded-xl bg-bg-primary border border-border-custom text-text-secondary">
+                          📍 <span className="line-clamp-1">{o.delivery_address}</span>
+                        </div>
                       </div>
-                      <button
-                        onClick={handleSeedProducts}
-                        disabled={loading}
-                        className="bg-brand-plum dark:bg-brand-gold dark:text-brand-charcoal text-brand-cream px-5 py-2.5 rounded font-bold text-xs uppercase tracking-wider shadow"
-                      >
-                        {loading ? "Seeding..." : "Seed Sample Products"}
-                      </button>
+
+                      <div className="flex justify-between items-center border-t border-border-custom pt-3">
+                        <span className="text-sm text-text-secondary">Total</span>
+                        <span className="text-2xl font-serif font-black text-brand-plum dark:text-brand-gold">
+                          KES {o.total.toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Big action buttons — no dropdowns */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {o.payment_status !== "paid" && (
+                          <BigButton
+                            color="green"
+                            icon={CheckCircle}
+                            disabled={loading}
+                            onClick={() =>
+                              quickUpdate("orders", o.id, { payment_status: "paid" }, "✅ Marked as PAID!")
+                            }
+                          >
+                            Mark as Paid
+                          </BigButton>
+                        )}
+                        {o.status !== "completed" && o.status !== "cancelled" && (
+                          <BigButton
+                            color="gold"
+                            icon={CheckCircle}
+                            disabled={loading}
+                            onClick={() =>
+                              quickUpdate("orders", o.id, { status: "completed" }, "🎉 Order marked DONE!")
+                            }
+                          >
+                            Mark as Done
+                          </BigButton>
+                        )}
+                        {o.status !== "cancelled" && (
+                          <BigButton
+                            color="plain"
+                            icon={XCircle}
+                            disabled={loading}
+                            onClick={() => {
+                              if (confirm(`Cancel order ${o.order_number}?`))
+                                quickUpdate("orders", o.id, { status: "cancelled" }, "Order cancelled.");
+                            }}
+                          >
+                            Cancel
+                          </BigButton>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {products
-                        .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                        .map((p) => (
-                          <div key={p.id} className="bg-bg-primary p-4 rounded-xl border border-border-custom flex gap-4">
-                            <div className="h-16 w-16 bg-bg-tertiary rounded overflow-hidden shrink-0 border border-border-custom">
-                              <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1 flex flex-col justify-between">
-                              <div>
-                                <div className="flex justify-between items-start">
-                                  <h4 className="font-bold text-sm text-text-primary pr-2 line-clamp-1">{p.name}</h4>
-                                  <span className={`text-[9px] px-1.5 rounded font-bold uppercase ${p.is_active ? 'bg-green-950/20 text-green-500' : 'bg-red-950/20 text-red-500'}`}>
-                                    {p.is_active ? 'Active' : 'Draft'}
-                                  </span>
-                                </div>
-                                <span className="text-[10px] text-brand-gold font-bold uppercase tracking-wider block mt-0.5">{p.category}</span>
-                              </div>
-                              <div className="flex items-center justify-between border-t border-border-custom pt-2 mt-2">
-                                <span className="font-bold text-xs">KES {p.price.toLocaleString()}</span>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => openEditProductModal(p)}
-                                    className="text-text-tertiary hover:text-brand-gold transition-colors p-1"
-                                    title="Edit Product"
-                                  >
-                                    <Edit2 size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => deleteProduct(p.id)}
-                                    className="text-text-tertiary hover:text-red-500 transition-colors p-1"
-                                    title="Delete Product"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 4: Student Applications */}
-              {activeTab === "enrollments" && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-border-custom pb-2">
-                    <h2 className="font-serif text-lg font-bold text-brand-plum dark:text-brand-gold">
-                      Student Enrollments
-                    </h2>
-                    <input
-                      type="text"
-                      placeholder="Search student name..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="bg-bg-primary border border-border-custom px-3 py-1.5 rounded text-xs focus:outline-none focus:border-brand-gold max-w-xs w-full"
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                    {enrollments
-                      .filter((en) => en.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
-                      .map((en) => (
-                        <div key={en.id} className="bg-bg-primary p-5 rounded-xl border border-border-custom space-y-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-bold text-sm text-text-primary">{en.full_name}</h4>
-                              <p className="text-[10px] text-text-tertiary">Registered on {new Date(en.created_at).toLocaleDateString()}</p>
-                            </div>
-                            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
-                              <select
-                                value={en.status}
-                                onChange={(e) => updateEnrollmentStatus(en.id, e.target.value)}
-                                className="bg-bg-secondary border border-border-custom px-2 py-1.5 rounded text-xs text-text-primary focus:outline-none"
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="completed">Completed</option>
-                                <option value="rejected">Rejected</option>
-                              </select>
-                              
-                              <button
-                                onClick={() => {
-                                  let cleanPhone = en.phone.replace(/[\s\+\-]/g, "");
-                                  if (cleanPhone.startsWith("0")) {
-                                    cleanPhone = "254" + cleanPhone.substring(1);
-                                  }
-                                  if (!cleanPhone.startsWith("254")) {
-                                    cleanPhone = "254" + cleanPhone;
-                                  }
-
-                                  let template = "";
-                                  if (en.status === "pending") {
-                                    template = `Hello ${en.full_name}, this is Victory Fashion Academy. We have received your enrollment application for the ${en.intake_month} intake (${en.study_mode} mode). We are currently reviewing your details and will get in touch with you shortly. Thank you!`;
-                                  } else if (en.status === "approved") {
-                                    template = `Hello ${en.full_name}, congratulations! Your application to Victory Fashion Academy has been APPROVED for the ${en.intake_month} intake (${en.study_mode} mode). Please visit our studio in Ruiru (2nd Sunrise Ave) to collect your official admission letter and start checklist. We look forward to meeting you!`;
-                                  } else if (en.status === "completed") {
-                                    template = `Hello ${en.full_name}, this is to confirm that your academic training profile for Victory Fashion Academy has been marked as Completed. Congratulations on finishing your training program!`;
-                                  } else if (en.status === "rejected") {
-                                    template = `Hello ${en.full_name}, thank you for your application to Victory Fashion Academy. Unfortunately, we are unable to accept your application for this intake due to seat constraints. We wish you all the best.`;
-                                  }
-
-                                  const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(template)}`;
-                                  window.open(url, "_blank");
-                                }}
-                                className="bg-green-950/20 text-green-500 hover:bg-green-600 hover:text-white border border-green-500/30 px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all"
-                              >
-                                <MessageSquare size={12} />
-                                <span>Notify Applicant</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[10px] text-text-secondary border-t border-b border-border-custom/50 py-3">
-                            <div><strong>WhatsApp Phone:</strong> {en.phone}</div>
-                            <div><strong>Intake Month:</strong> <span className="capitalize">{en.intake_month}</span></div>
-                            <div><strong>Study Mode:</strong> <span className="capitalize">{en.study_mode}</span></div>
-                            <div><strong>ID Number:</strong> {en.id_number}</div>
-                            <div><strong>County:</strong> {en.county}</div>
-                            <div><strong>Education:</strong> {en.education_level}</div>
-                            <div><strong>Emergency Phone:</strong> {en.emergency_phone} ({en.emergency_name})</div>
-                            <div><strong>Previous sewing exp:</strong> <span className="capitalize">{en.has_experience}</span></div>
-                          </div>
-
-                          {en.additional_info && (
-                            <p className="text-[10px] text-text-tertiary italic">
-                              <strong>Notes:</strong> "{en.additional_info}"
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 5: Contact Messages */}
-              {activeTab === "messages" && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-border-custom pb-2">
-                    <h2 className="font-serif text-lg font-bold text-brand-plum dark:text-brand-gold">
-                      Contact Inquiries
-                    </h2>
-                    <input
-                      type="text"
-                      placeholder="Search sender name..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="bg-bg-primary border border-border-custom px-3 py-1.5 rounded text-xs focus:outline-none focus:border-brand-gold max-w-xs w-full"
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                    {messages
-                      .filter((m) => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                      .map((m) => (
-                        <div key={m.id} className="bg-bg-primary p-5 rounded-xl border border-border-custom space-y-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-bold text-sm text-text-primary">{m.name}</h4>
-                              <p className="text-[10px] text-text-tertiary">{m.phone} | {m.email || 'No email'}</p>
-                            </div>
-                            <select
-                              value={m.status}
-                              onChange={(e) => updateMessageStatus(m.id, e.target.value)}
-                              className="bg-bg-secondary border border-border-custom px-2.5 py-1 rounded text-xs text-text-primary focus:outline-none"
-                            >
-                              <option value="new">New</option>
-                              <option value="read">Read</option>
-                              <option value="replied">Replied</option>
-                            </select>
-                          </div>
-
-                          <div className="p-3 bg-bg-secondary rounded border border-border-custom text-xs text-text-secondary leading-relaxed">
-                            <strong className="block text-[10px] text-brand-gold uppercase tracking-wider mb-1">Subject: {m.subject || 'General Inquiry'}</strong>
-                            "{m.message}"
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-            </div>
+                  ))}
+              </div>
+            )}
           </div>
-        </section>
+        )}
+
+        {/* ---- PRODUCTS ---- */}
+        {activeTab === "products" && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <h2 className="font-serif text-2xl font-bold">Shop Items</h2>
+              <BigButton color="gold" icon={Plus} onClick={openAddProductModal}>
+                Add New Item
+              </BigButton>
+            </div>
+
+            <input
+              type="search"
+              placeholder="Search item name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-bg-secondary border-2 border-border-custom px-4 py-3 rounded-xl text-base focus:outline-none focus:border-brand-gold"
+            />
+
+            {products.length === 0 ? (
+              <div className="py-14 border-2 border-dashed border-border-custom rounded-2xl text-center space-y-4 bg-bg-secondary px-6">
+                <ShoppingBag size={44} className="text-brand-gold mx-auto" />
+                <div className="space-y-1">
+                  <p className="font-serif text-lg font-bold">The shop is empty</p>
+                  <p className="text-sm text-text-secondary max-w-sm mx-auto">
+                    Tap the gold button above to add your first item — or add 6 sample items to see how it looks.
+                  </p>
+                </div>
+                <div className="max-w-xs mx-auto">
+                  <BigButton color="plain" onClick={handleSeedProducts} disabled={loading} icon={Plus}>
+                    {loading ? "Adding..." : "Add 6 Sample Items"}
+                  </BigButton>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {products
+                  .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="bg-bg-secondary rounded-2xl border border-border-custom overflow-hidden shadow-soft"
+                    >
+                      <div className="flex gap-4 p-4">
+                        <img
+                          src={p.image_url}
+                          alt={p.name}
+                          className="h-24 w-24 rounded-xl object-cover border border-border-custom bg-bg-tertiary shrink-0"
+                        />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex justify-between items-start gap-2">
+                            <h4 className="font-bold text-base text-text-primary leading-snug">
+                              {p.name}
+                            </h4>
+                            <span
+                              className={`text-[10px] px-2 py-1 rounded-full font-extrabold uppercase shrink-0 ${
+                                p.is_active
+                                  ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                                  : "bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                              }`}
+                            >
+                              {p.is_active ? "In Shop" : "Hidden"}
+                            </span>
+                          </div>
+                          <span className="text-xs text-brand-gold font-bold uppercase tracking-wider capitalize block">
+                            {p.category}
+                          </span>
+                          <div className="flex items-baseline gap-3">
+                            <span className="font-serif font-black text-lg text-brand-plum dark:text-brand-gold">
+                              KES {p.price.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-text-tertiary">
+                              {p.stock_quantity} in stock
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 border-t border-border-custom">
+                        <button
+                          onClick={() => openEditProductModal(p)}
+                          className="tap-target flex items-center justify-center gap-2 py-3.5 text-sm font-bold text-brand-plum dark:text-brand-gold hover:bg-bg-tertiary transition-colors border-r border-border-custom"
+                        >
+                          <Edit2 size={16} /> Edit
+                        </button>
+                        <button
+                          onClick={() => deleteProduct(p.id, p.name)}
+                          className="tap-target flex items-center justify-center gap-2 py-3.5 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                        >
+                          <Trash2 size={16} /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ---- STUDENTS ---- */}
+        {activeTab === "enrollments" && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <h2 className="font-serif text-2xl font-bold">Academy Students</h2>
+              <input
+                type="search"
+                placeholder="Search student name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-bg-secondary border-2 border-border-custom px-4 py-3 rounded-xl text-base focus:outline-none focus:border-brand-gold w-full sm:w-72"
+              />
+            </div>
+
+            {enrollments.filter((en) =>
+              en.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
+              <div className="py-16 text-center text-text-tertiary bg-bg-secondary rounded-2xl border border-dashed border-border-custom">
+                <Users size={40} className="mx-auto mb-3 text-brand-gold" />
+                <p className="text-base font-semibold">No student applications yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {enrollments
+                  .filter((en) => en.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((en) => (
+                    <div
+                      key={en.id}
+                      className="bg-bg-secondary rounded-2xl border border-border-custom p-5 space-y-4 shadow-soft"
+                    >
+                      <div className="flex flex-wrap justify-between items-start gap-2">
+                        <div>
+                          <h4 className="font-bold text-lg text-text-primary">{en.full_name}</h4>
+                          <p className="text-sm text-text-secondary capitalize">
+                            {en.study_mode} · {en.intake_month} intake
+                          </p>
+                        </div>
+                        <StatusChip kind="form" value={en.status} />
+                      </div>
+
+                      <a
+                        href={`tel:${en.phone}`}
+                        className="flex items-center gap-2 p-3 rounded-xl bg-bg-primary border border-border-custom font-bold text-brand-plum dark:text-brand-gold tap-target text-base"
+                      >
+                        <Phone size={18} /> {en.phone}
+                      </a>
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-text-secondary border-t border-b border-border-custom py-3">
+                        <div><strong>County:</strong> {en.county}</div>
+                        <div><strong>ID No:</strong> {en.id_number}</div>
+                        <div><strong>Education:</strong> {en.education_level}</div>
+                        <div className="capitalize"><strong>Sewing before:</strong> {en.has_experience}</div>
+                        <div className="col-span-2">
+                          <strong>Emergency:</strong> {en.emergency_name} ({en.emergency_phone})
+                        </div>
+                      </div>
+
+                      {en.additional_info && (
+                        <p className="text-sm text-text-tertiary italic">
+                          "{en.additional_info}"
+                        </p>
+                      )}
+
+                      {en.status === "pending" && (
+                        <BigButton
+                          color="green"
+                          icon={CheckCircle}
+                          disabled={loading}
+                          onClick={() =>
+                            quickUpdate("enrollments", en.id, { status: "approved" }, `🎉 ${en.full_name} approved!`)
+                          }
+                        >
+                          Approve Student
+                        </BigButton>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ---- MESSAGES ---- */}
+        {activeTab === "messages" && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <h2 className="font-serif text-2xl font-bold">Website Messages</h2>
+              <input
+                type="search"
+                placeholder="Search sender name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-bg-secondary border-2 border-border-custom px-4 py-3 rounded-xl text-base focus:outline-none focus:border-brand-gold w-full sm:w-72"
+              />
+            </div>
+
+            {messages.filter((m) =>
+              m.name.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
+              <div className="py-16 text-center text-text-tertiary bg-bg-secondary rounded-2xl border border-dashed border-border-custom">
+                <MessageSquare size={40} className="mx-auto mb-3 text-brand-gold" />
+                <p className="text-base font-semibold">No messages yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages
+                  .filter((m) => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((m) => (
+                    <div
+                      key={m.id}
+                      className="bg-bg-secondary rounded-2xl border border-border-custom p-5 space-y-3 shadow-soft"
+                    >
+                      <div className="flex flex-wrap justify-between items-start gap-2">
+                        <div>
+                          <h4 className="font-bold text-lg text-text-primary">{m.name}</h4>
+                          <a
+                            href={`tel:${m.phone}`}
+                            className="text-sm font-bold text-brand-plum dark:text-brand-gold"
+                          >
+                            {m.phone}
+                          </a>
+                        </div>
+                        <StatusChip kind="form" value={m.status} />
+                      </div>
+
+                      <div className="p-4 bg-bg-primary rounded-xl border border-border-custom text-base text-text-secondary leading-relaxed">
+                        <strong className="block text-xs text-brand-gold uppercase tracking-wider mb-1.5">
+                          {m.subject || "General Inquiry"}
+                        </strong>
+                        "{m.message}"
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {m.status === "new" && (
+                          <BigButton
+                            color="plain"
+                            icon={Clock}
+                            disabled={loading}
+                            onClick={() =>
+                              quickUpdate("contact_messages", m.id, { status: "read" }, "👀 Marked as read.")
+                            }
+                          >
+                            Mark Read
+                          </BigButton>
+                        )}
+                        {m.status !== "replied" && (
+                          <BigButton
+                            color="green"
+                            icon={CheckCircle}
+                            disabled={loading}
+                            onClick={() =>
+                              quickUpdate("contact_messages", m.id, { status: "replied" }, "✅ Marked as replied!")
+                            }
+                          >
+                            Mark Replied
+                          </BigButton>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
-      {/* Product Add/Edit Modal */}
+      {/* ===== PRODUCT FORM (bottom sheet on mobile) ===== */}
       {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="absolute inset-0" onClick={() => setIsProductModalOpen(false)} />
-          <div className="relative bg-bg-secondary text-text-primary p-6 sm:p-8 rounded-xl max-w-lg w-full overflow-hidden shadow-2xl border border-border-custom z-10 animate-in zoom-in-95">
-            <h3 className="font-serif text-lg font-bold border-b border-border-custom pb-2 mb-4 text-brand-plum dark:text-brand-gold">
-              {editingProduct ? "Edit Ready-To-Wear Product" : "Add New Ready-To-Wear Product"}
-            </h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
+          <div className="relative bg-bg-secondary text-text-primary w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl border border-border-custom max-h-[92dvh] overflow-y-auto">
+            <div className="sticky top-0 bg-bg-secondary border-b border-border-custom px-6 py-4 flex items-center justify-between rounded-t-3xl z-10">
+              <h3 className="font-serif text-xl font-bold text-brand-plum dark:text-brand-gold">
+                {editingProduct ? "Edit Item" : "Add New Item"}
+              </h3>
+              <button
+                onClick={() => setIsProductModalOpen(false)}
+                className="tap-target p-2 rounded-full hover:bg-bg-tertiary"
+                aria-label="Close form"
+              >
+                <XCircle size={26} />
+              </button>
+            </div>
 
-            <form onSubmit={handleProductSubmit} className="space-y-4">
+            <form onSubmit={handleProductSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-xs font-semibold mb-1 text-text-secondary">Product Name *</label>
+                <label htmlFor="p-name" className="block text-base font-bold mb-2">
+                  What is the item called? *
+                </label>
                 <input
+                  id="p-name"
                   type="text"
                   required
                   value={prodName}
                   onChange={(e) => setProdName(e.target.value)}
-                  placeholder="e.g. Ankara Mermaid Silhouette"
-                  className="w-full bg-bg-primary border border-border-custom px-3 py-2 rounded text-sm focus:outline-none focus:border-brand-gold"
+                  placeholder="e.g. Ankara Mermaid Dress"
+                  className="w-full bg-bg-primary border-2 border-border-custom px-4 py-3.5 rounded-xl text-base focus:outline-none focus:border-brand-gold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold mb-1 text-text-secondary">Category *</label>
+                  <label htmlFor="p-cat" className="block text-base font-bold mb-2">
+                    Type *
+                  </label>
                   <select
+                    id="p-cat"
                     value={prodCategory}
                     onChange={(e) => setProdCategory(e.target.value)}
-                    className="w-full bg-bg-primary border border-border-custom px-3 py-2 rounded text-sm focus:outline-none"
+                    className="w-full bg-bg-primary border-2 border-border-custom px-4 py-3.5 rounded-xl text-base focus:outline-none"
                   >
                     <option value="dresses">Dresses</option>
                     <option value="tops">Tops</option>
@@ -1019,114 +1079,141 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1 text-text-secondary">Price (KES) *</label>
+                  <label htmlFor="p-price" className="block text-base font-bold mb-2">
+                    Price (KES) *
+                  </label>
                   <input
+                    id="p-price"
                     type="number"
+                    inputMode="numeric"
                     required
                     value={prodPrice}
                     onChange={(e) => setProdPrice(e.target.value)}
                     placeholder="3500"
-                    className="w-full bg-bg-primary border border-border-custom px-3 py-2 rounded text-sm focus:outline-none focus:border-brand-gold"
+                    className="w-full bg-bg-primary border-2 border-border-custom px-4 py-3.5 rounded-xl text-base focus:outline-none focus:border-brand-gold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold mb-1 text-text-secondary">Product Description</label>
+                <label htmlFor="p-desc" className="block text-base font-bold mb-2">
+                  Short description
+                </label>
                 <textarea
+                  id="p-desc"
                   rows={2}
                   value={prodDesc}
                   onChange={(e) => setProdDesc(e.target.value)}
-                  placeholder="Crafted from premium fabrics..."
-                  className="w-full bg-bg-primary border border-border-custom px-3 py-2 rounded text-sm focus:outline-none focus:border-brand-gold resize-none"
+                  placeholder="e.g. Beautiful Ankara print, fits sizes 10-14"
+                  className="w-full bg-bg-primary border-2 border-border-custom px-4 py-3.5 rounded-xl text-base focus:outline-none focus:border-brand-gold resize-none"
                 />
               </div>
 
-              {/* Melanin image picker selection */}
               <div>
-                <label className="block text-xs font-semibold mb-1.5 text-text-secondary">Image Selection (Melanin Rich Models)</label>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  {defaultMelaninImages.map((img, idx) => (
+                <span className="block text-base font-bold mb-2">Photo of the item</span>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {defaultImages.map((img, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => setProdImageUrl(img.url)}
-                      className={`text-[9px] px-2 py-1.5 border rounded-md text-left truncate flex items-center gap-1.5 transition-all ${
-                        prodImageUrl === img.url ? 'border-brand-gold bg-bg-tertiary font-bold' : 'border-border-custom bg-bg-primary hover:bg-bg-tertiary/50'
+                      className={`relative rounded-xl overflow-hidden border-2 transition-all h-20 ${
+                        prodImageUrl === img.url
+                          ? "border-brand-gold ring-2 ring-brand-gold"
+                          : "border-border-custom"
                       }`}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-gold shrink-0"></span>
-                      <span>{img.label}</span>
+                      <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] font-bold py-1 text-center">
+                        {img.label}
+                      </span>
                     </button>
                   ))}
                 </div>
                 <input
-                  type="text"
+                  type="url"
                   value={prodImageUrl}
                   onChange={(e) => setProdImageUrl(e.target.value)}
-                  placeholder="Custom image URL..."
-                  className="w-full bg-bg-primary border border-border-custom px-3 py-2 rounded text-sm focus:outline-none focus:border-brand-gold text-xs"
+                  placeholder="Or paste a photo link here..."
+                  aria-label="Custom image URL"
+                  className="w-full bg-bg-primary border-2 border-border-custom px-4 py-3.5 rounded-xl text-sm focus:outline-none focus:border-brand-gold"
                 />
+                {prodImageUrl && (
+                  <img
+                    src={prodImageUrl}
+                    alt="Preview"
+                    className="mt-3 h-32 w-full object-cover rounded-xl border border-border-custom"
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold mb-1 text-text-secondary">Stock Quantity *</label>
+                  <label htmlFor="p-stock" className="block text-base font-bold mb-2">
+                    How many in stock? *
+                  </label>
                   <input
+                    id="p-stock"
                     type="number"
+                    inputMode="numeric"
                     required
                     value={prodStock}
                     onChange={(e) => setProdStock(e.target.value)}
-                    className="w-full bg-bg-primary border border-border-custom px-3 py-2 rounded text-sm focus:outline-none"
+                    className="w-full bg-bg-primary border-2 border-border-custom px-4 py-3.5 rounded-xl text-base focus:outline-none focus:border-brand-gold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1 text-text-secondary">Badge (Optional)</label>
-                  <input
-                    type="text"
+                  <label htmlFor="p-badge" className="block text-base font-bold mb-2">
+                    Label (optional)
+                  </label>
+                  <select
+                    id="p-badge"
                     value={prodBadge}
                     onChange={(e) => setProdBadge(e.target.value)}
-                    placeholder="New / Sale / Popular"
-                    className="w-full bg-bg-primary border border-border-custom px-3 py-2 rounded text-sm focus:outline-none"
-                  />
+                    className="w-full bg-bg-primary border-2 border-border-custom px-4 py-3.5 rounded-xl text-base focus:outline-none"
+                  >
+                    <option value="">No label</option>
+                    <option value="New">New</option>
+                    <option value="Popular">Popular</option>
+                    <option value="Sale">Sale</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="prodActive"
-                  checked={prodActive}
-                  onChange={(e) => setProdActive(e.target.checked)}
-                  className="rounded border-border-custom text-brand-gold focus:ring-0 h-4 w-4 bg-bg-primary"
-                />
-                <label htmlFor="prodActive" className="text-xs text-text-secondary font-semibold cursor-pointer">
-                  Is Active (visible in shop catalog)
-                </label>
-              </div>
+              <button
+                type="button"
+                onClick={() => setProdActive(!prodActive)}
+                className={`w-full tap-target flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                  prodActive
+                    ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                    : "border-border-custom bg-bg-primary"
+                }`}
+              >
+                <span className="text-base font-bold">
+                  {prodActive ? "✅ Showing in shop" : "🚫 Hidden from shop"}
+                </span>
+                <span
+                  className={`h-7 w-12 rounded-full p-1 transition-colors ${
+                    prodActive ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`block h-5 w-5 rounded-full bg-white transition-transform ${
+                      prodActive ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </span>
+              </button>
 
-              <div className="flex gap-3 pt-4 border-t border-border-custom">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-brand-plum text-brand-cream dark:bg-brand-gold dark:text-brand-charcoal py-2.5 rounded font-bold text-xs uppercase tracking-wider shadow"
-                >
-                  {loading ? "Saving to Database..." : "Save Product"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsProductModalOpen(false)}
-                  className="px-4 py-2.5 border border-border-custom rounded font-semibold text-xs uppercase tracking-wider text-text-secondary hover:bg-bg-tertiary"
-                >
-                  Cancel
-                </button>
+              <div className="pt-2 pb-safe">
+                <BigButton color="gold" type="submit" onClick={() => {}} disabled={loading}>
+                  {loading ? "Saving..." : editingProduct ? "Save Changes" : "Add to Shop"}
+                </BigButton>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      <Footer />
-    </>
+    </div>
   );
 }
