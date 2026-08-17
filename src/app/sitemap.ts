@@ -21,8 +21,11 @@ const routes: Array<{
   { path: "/services", changeFrequency: "monthly", priority: 0.9 },
   { path: "/academy", changeFrequency: "weekly", priority: 0.9 },
   { path: "/portfolio", changeFrequency: "weekly", priority: 0.8 },
-  { path: "/about", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/testimonials", changeFrequency: "monthly", priority: 0.7 },
   { path: "/contact", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/faq", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/journal", changeFrequency: "weekly", priority: 0.6 },
+  { path: "/about", changeFrequency: "monthly", priority: 0.6 },
 
   // Service detail pages — these carry the long-tail local search terms.
   { path: "/services/custom-dressmaking", changeFrequency: "monthly", priority: 0.8 },

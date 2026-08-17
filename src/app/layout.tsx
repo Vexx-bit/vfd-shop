@@ -51,6 +51,12 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: "/",
+    types: {
+      // Backed by src/app/feed.xml/route.ts.
+      "application/rss+xml": [
+        { url: "/feed.xml", title: "Victory Fashion Design Journal Feed" },
+      ],
+    },
   },
   category: "Fashion",
 };
