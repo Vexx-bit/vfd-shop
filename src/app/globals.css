@@ -1,54 +1,76 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..700&family=Archivo:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+/*
+  Victory Fashion Design — gallery system.
+
+  The direction is taken from the monogram: a single-weight outline with no fill,
+  no ornament, no rounded terminals. That mark belongs on a gallery wall, so the
+  interface behaves like one — bone paper, ink type, hairline rules, and no colour
+  of its own. The garments supply every bit of colour on the page.
+
+  Deliberately avoided: Inter, Playfair Display, generous corner radii, stacked
+  drop shadows, cards nested inside cards, and gradient fills. Those are the
+  defaults that make a site look generated rather than designed.
+*/
 
 @layer base {
   :root {
-    --background: #F8F4EC; /* Brand Cream (slightly brighter for mobile readability) */
-    --foreground: #1E1B1A; /* Brand Charcoal */
+    --background: #FBFAF7; /* Bone — paper, not cream. Less yellow than before. */
+    --foreground: #14110F; /* Ink */
 
-    --bg-primary: #F8F4EC;
+    --bg-primary: #FBFAF7;
     --bg-secondary: #FFFFFF;
-    --bg-tertiary: #EFE3D3; /* Brand Blush */
+    --bg-tertiary: #F2EFE9;
 
-    --text-primary: #1E1B1A;
-    --text-secondary: #4E4644;
-    --text-tertiary: #7E7370;
+    --text-primary: #14110F;
+    --text-secondary: #57514C;
+    --text-tertiary: #8C847D;
 
-    --border-color: #E4DACC;
+    --border-color: #E3DED6;
+    --border-strong: #14110F;
 
-    --primary: #5B1A2E; /* Brand Plum */
-    --primary-hover: #451020;
-    --accent: #C8A44D; /* Brand Gold */
-    --accent-hover: #A78434;
+    --primary: #14110F;
+    --primary-hover: #000000;
+    --accent: #B8933F; /* Deepened gold. An accent, never a background. */
+    --accent-hover: #9A7A31;
   }
 
   .dark {
-    --background: #191615;
-    --foreground: #F6F1E7;
+    --background: #0F0D0C;
+    --foreground: #F4F0E9;
 
-    --bg-primary: #191615;
-    --bg-secondary: #141110;
-    --bg-tertiary: #2B2625;
+    --bg-primary: #0F0D0C;
+    --bg-secondary: #171413;
+    --bg-tertiary: #211D1B;
 
-    --text-primary: #F6F1E7;
-    --text-secondary: #D4C9B8;
-    --text-tertiary: #A79986;
+    --text-primary: #F4F0E9;
+    --text-secondary: #B9B1A8;
+    --text-tertiary: #857D75;
 
-    --border-color: #3A3332;
+    --border-color: #2A2523;
+    --border-strong: #F4F0E9;
 
-    --primary: #C8A44D;
-    --primary-hover: #E1BA5C;
-    --accent: #5B1A2E;
-    --accent-hover: #7A243F;
+    --primary: #F4F0E9;
+    --primary-hover: #FFFFFF;
+    --accent: #C8A44D;
+    --accent-hover: #DCBB65;
   }
 }
 
 @theme {
-  --color-brand-plum: #5B1A2E;
-  --color-brand-gold: #C8A44D;
-  --color-brand-cream: #F6F1E7;
-  --color-brand-charcoal: #1E1B1A;
-  --color-brand-blush: #E9D5C4;
+  /*
+    brand-plum resolves to ink. The name is kept so the dozens of existing
+    bg-brand-plum / text-brand-plum usages across the app inherit the new
+    system without a sweeping find-and-replace. Actual plum lives on as
+    brand-wine for the rare moments it earns its place.
+  */
+  --color-brand-plum: #14110F;
+  --color-brand-charcoal: #14110F;
+  --color-brand-cream: #FBFAF7;
+  --color-brand-gold: #B8933F;
+  --color-brand-blush: #F2EFE9;
+  --color-brand-wine: #5B1A2E;
 
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
@@ -59,21 +81,38 @@
   --color-text-tertiary: var(--text-tertiary);
 
   --color-border-custom: var(--border-color);
+  --color-border-strong: var(--border-strong);
 
   --color-primary-custom: var(--primary);
   --color-primary-custom-hover: var(--primary-hover);
   --color-accent-custom: var(--accent);
   --color-accent-custom-hover: var(--accent-hover);
 
-  --font-serif: "Playfair Display", Georgia, serif;
-  --font-sans: Inter, "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --font-serif: "Bodoni Moda", "Times New Roman", Georgia, serif;
+  --font-sans: Archivo, "Helvetica Neue", system-ui, sans-serif;
 
-  --radius-lg: 1.5rem;
-  --radius-md: 1rem;
-  --radius-sm: 0.5rem;
+  /*
+    Everything is square. This single change does more to break the template
+    look than any amount of recolouring — rounded-full pills and rounded-xl
+    cards are the signature of a generated layout.
+  */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+  --radius-full: 0px;
 
-  --shadow-soft: 0 1px 2px rgba(30, 27, 26, 0.06), 0 8px 24px rgba(30, 27, 26, 0.06);
-  --shadow-lift: 0 2px 6px rgba(30, 27, 26, 0.08), 0 16px 40px rgba(30, 27, 26, 0.12);
+  /* Retained as names only. Depth now comes from rules, not elevation. */
+  --shadow-soft: 0 0 0 0 rgba(0, 0, 0, 0);
+  --shadow-lift: 0 0 0 0 rgba(0, 0, 0, 0);
+
+  /* Editorial display sizes, tuned to clamp so mobile never gets a wall of type. */
+  --text-display: clamp(2.75rem, 9vw, 7.5rem);
+  --text-display-sm: clamp(2rem, 6vw, 4rem);
 }
 
 html {
@@ -85,8 +124,22 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
+  font-weight: 400;
   overflow-x: hidden;
   transition: background-color 300ms ease, color 300ms ease;
+}
+
+/*
+  Bodoni is a high-contrast face: it needs negative tracking at display sizes
+  and tight leading, otherwise it reads as a word-processor default.
+*/
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+  font-weight: 500;
 }
 
 /* Never let iOS auto-zoom on inputs (needs 16px minimum) */
@@ -103,9 +156,9 @@ img {
 
 /* Accessible keyboard focus */
 :focus-visible {
-  outline: 2px solid var(--color-brand-gold);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 1px solid var(--border-strong);
+  outline-offset: 3px;
+  border-radius: 0;
 }
 
 /* Respect reduced motion */
@@ -120,21 +173,68 @@ img {
   }
 }
 
+/* ---- Editorial primitives ---- */
+
+/*
+  The small uppercase label that sits above a heading. Fashion publishing runs
+  these very small and very wide — the restraint is the point.
+*/
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--text-tertiary);
+}
+
+.display-xl {
+  font-family: var(--font-serif);
+  font-size: var(--text-display);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+}
+
+/* A single hairline. Replaces the old shadow-based section separation. */
+.rule {
+  height: 1px;
+  width: 100%;
+  background-color: var(--border-color);
+}
+
+/*
+  Motion lives inside the image, not on the container. The grid stays
+  perfectly still while the garment breathes — the opposite of a card that
+  lifts and casts a shadow on hover.
+*/
+.hover-zoom {
+  overflow: hidden;
+}
+.hover-zoom img {
+  transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+.hover-zoom:hover img {
+  transform: scale(1.04);
+}
+
 /* ---- Brand stitch motifs ---- */
 .stitch-divider {
-  height: 2px;
+  height: 1px;
   background-image: repeating-linear-gradient(
     90deg,
-    var(--color-brand-gold) 0px,
-    var(--color-brand-gold) 4px,
-    transparent 4px,
-    transparent 8px
+    var(--text-primary) 0px,
+    var(--text-primary) 3px,
+    transparent 3px,
+    transparent 7px
   );
   width: 100%;
+  opacity: 0.35;
 }
 
 .stitch-border {
-  border: 1px dashed var(--color-brand-gold);
+  border: 1px dashed var(--border-color);
 }
 
 /* ---- Safe-area helpers (iPhone notch / home indicator) ---- */
@@ -145,7 +245,7 @@ img {
   margin-bottom: env(safe-area-inset-bottom);
 }
 
-/* ---- Hide scrollbars on horizontal pill rows ---- */
+/* ---- Hide scrollbars on horizontal filter rows ---- */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -174,17 +274,18 @@ img {
   animation: shimmer 1.4s ease infinite;
 }
 
-/* ---- Card elevation ---- */
+/*
+  Kept under the old name so existing markup keeps working, but the behaviour
+  is inverted: no lift, no shadow. Only the rule darkens to ink.
+*/
 .card-lift {
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: border-color 400ms ease;
 }
 .card-lift:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lift);
-  border-color: var(--color-brand-gold);
+  border-color: var(--border-strong);
 }
 
-/* ---- Large comfortable tap targets (used heavily on the admin side) ---- */
+/* ---- Large comfortable tap targets ---- */
 .tap-target {
   min-height: 48px;
   min-width: 48px;
