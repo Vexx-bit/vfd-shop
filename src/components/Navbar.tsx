@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme, useCart } from "@/app/providers";
+import { BrandLogo } from "@/components/BrandMark";
 import {
   Menu,
   X,
@@ -34,44 +35,6 @@ const navLinks = [
 
 const WHATSAPP_LINK =
   "https://wa.me/254706232927?text=Hello%20Victory%20Fashion%2C%20I%20would%20like%20to%20inquire%20about%20your%20services.";
-
-function BrandMark({ compact = false }: { compact?: boolean }) {
-  return (
-    <Link href="/" className="flex items-center gap-2 group shrink-0">
-      <svg
-        className={`${compact ? "h-7 w-7" : "h-8 w-8"} text-brand-gold group-hover:scale-105 transition-transform`}
-        viewBox="0 0 100 100"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <path
-          d="M15 15 L50 85 L85 15"
-          stroke="currentColor"
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <ellipse cx="50" cy="28" rx="2" ry="6" fill="#F6F1E7" />
-        <path
-          d="M30 46 C 45 42, 55 58, 70 54"
-          stroke="#5B1A2E"
-          strokeWidth="3"
-          strokeDasharray="4,4"
-          className="dark:stroke-brand-cream"
-        />
-      </svg>
-      <div className="flex flex-col leading-none">
-        <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-brand-plum dark:text-brand-gold">
-          Victory Fashion
-        </span>
-        <span className="text-[10px] uppercase tracking-wider text-text-tertiary mt-0.5">
-          Design & Academy
-        </span>
-      </div>
-    </Link>
-  );
-}
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
@@ -115,7 +78,13 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
-            <BrandMark compact={scrolled} />
+            <Link
+              href="/"
+              className="group shrink-0"
+              aria-label="Victory Fashion Designers — home"
+            >
+              <BrandLogo compact={scrolled} />
+            </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1" aria-label="Primary">
@@ -210,7 +179,10 @@ export default function Navbar() {
               <MessageCircle size={20} />
               <span>Chat With Us on WhatsApp</span>
             </a>
-            <p className="text-center text-xs text-text-tertiary mt-4">
+            <p className="text-center text-xs text-text-tertiary mt-4 italic">
+              where smartness matters
+            </p>
+            <p className="text-center text-xs text-text-tertiary mt-1">
               2nd Sunrise Ave, Ruiru · Mon–Sat 8AM–6PM
             </p>
           </nav>
