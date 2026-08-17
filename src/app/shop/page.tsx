@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
+import { MonogramWatermark } from "@/components/BrandMark";
 import { useCart } from "@/app/providers";
 import { supabase } from "@/lib/supabase";
 import { ShoppingCart, Search, MessageCircle, CheckCircle } from "lucide-react";
@@ -294,7 +295,8 @@ export default function ShopPage() {
                     key={p.id}
                     className="bg-bg-secondary rounded-xl overflow-hidden border border-border-custom shadow-soft card-lift flex flex-col"
                   >
-                    {/* Image */}
+                    {/* Image — watermarked with the VFD monogram so shared
+                        photos always carry the brand */}
                     <div className="relative aspect-[3/4] overflow-hidden bg-bg-tertiary">
                       {p.image_url ? (
                         <img
@@ -308,13 +310,14 @@ export default function ShopPage() {
                           <ShoppingCart size={36} />
                         </div>
                       )}
+                      <MonogramWatermark />
                       {p.badge && (
-                        <span className="absolute top-2 left-2 bg-brand-gold text-brand-charcoal text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
+                        <span className="absolute top-2 left-2 bg-brand-gold text-brand-charcoal text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded z-10">
                           {p.badge}
                         </span>
                       )}
                       {p.stock_quantity <= 3 && p.stock_quantity > 0 && (
-                        <span className="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">
+                        <span className="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded z-10">
                           Only {p.stock_quantity} left
                         </span>
                       )}
