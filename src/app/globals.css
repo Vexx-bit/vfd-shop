@@ -1,21 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 @layer base {
   :root {
-    --background: #F6F1E7; /* Brand Cream */
+    --background: #F8F4EC; /* Brand Cream (slightly brighter for mobile readability) */
     --foreground: #1E1B1A; /* Brand Charcoal */
-    
-    --bg-primary: #F6F1E7;
+
+    --bg-primary: #F8F4EC;
     --bg-secondary: #FFFFFF;
-    --bg-tertiary: #E9D5C4; /* Brand Blush */
-    
+    --bg-tertiary: #EFE3D3; /* Brand Blush */
+
     --text-primary: #1E1B1A;
     --text-secondary: #4E4644;
     --text-tertiary: #7E7370;
-    
-    --border-color: #E2DACB;
-    
+
+    --border-color: #E4DACC;
+
     --primary: #5B1A2E; /* Brand Plum */
     --primary-hover: #451020;
     --accent: #C8A44D; /* Brand Gold */
@@ -23,20 +23,20 @@
   }
 
   .dark {
-    --background: #1E1B1A; /* Brand Charcoal */
-    --foreground: #F6F1E7; /* Brand Cream */
-    
-    --bg-primary: #1E1B1A;
-    --bg-secondary: #121010;
-    --bg-tertiary: #2D2827;
-    
+    --background: #191615;
+    --foreground: #F6F1E7;
+
+    --bg-primary: #191615;
+    --bg-secondary: #141110;
+    --bg-tertiary: #2B2625;
+
     --text-primary: #F6F1E7;
     --text-secondary: #D4C9B8;
     --text-tertiary: #A79986;
-    
-    --border-color: #383130;
-    
-    --primary: #C8A44D; /* Brand Gold in dark mode */
+
+    --border-color: #3A3332;
+
+    --primary: #C8A44D;
     --primary-hover: #E1BA5C;
     --accent: #5B1A2E;
     --accent-hover: #7A243F;
@@ -49,28 +49,36 @@
   --color-brand-cream: #F6F1E7;
   --color-brand-charcoal: #1E1B1A;
   --color-brand-blush: #E9D5C4;
-  
+
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-tertiary: var(--bg-tertiary);
-  
+
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
-  
+
   --color-border-custom: var(--border-color);
-  
+
   --color-primary-custom: var(--primary);
   --color-primary-custom-hover: var(--primary-hover);
   --color-accent-custom: var(--accent);
   --color-accent-custom-hover: var(--accent-hover);
-  
+
   --font-serif: "Playfair Display", Georgia, serif;
-  --font-sans: Inter, "Instrument Sans", sans-serif;
-  
+  --font-sans: Inter, "Instrument Sans", system-ui, -apple-system, sans-serif;
+
   --radius-lg: 1.5rem;
   --radius-md: 1rem;
   --radius-sm: 0.5rem;
+
+  --shadow-soft: 0 1px 2px rgba(30, 27, 26, 0.06), 0 8px 24px rgba(30, 27, 26, 0.06);
+  --shadow-lift: 0 2px 6px rgba(30, 27, 26, 0.08), 0 16px 40px rgba(30, 27, 26, 0.12);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -81,13 +89,103 @@ body {
   transition: background-color 300ms ease, color 300ms ease;
 }
 
-/* Custom stitch line utility */
+/* Never let iOS auto-zoom on inputs (needs 16px minimum) */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Accessible keyboard focus */
+:focus-visible {
+  outline: 2px solid var(--color-brand-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Brand stitch motifs ---- */
 .stitch-divider {
   height: 2px;
-  background-image: repeating-linear-gradient(90deg, var(--color-brand-gold) 0px, var(--color-brand-gold) 4px, transparent 4px, transparent 8px);
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--color-brand-gold) 0px,
+    var(--color-brand-gold) 4px,
+    transparent 4px,
+    transparent 8px
+  );
   width: 100%;
 }
 
 .stitch-border {
   border: 1px dashed var(--color-brand-gold);
+}
+
+/* ---- Safe-area helpers (iPhone notch / home indicator) ---- */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+/* ---- Hide scrollbars on horizontal pill rows ---- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ---- Skeleton shimmer for loading states ---- */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--bg-secondary) 37%,
+    var(--bg-tertiary) 63%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+/* ---- Card elevation ---- */
+.card-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--color-brand-gold);
+}
+
+/* ---- Large comfortable tap targets (used heavily on the admin side) ---- */
+.tap-target {
+  min-height: 48px;
+  min-width: 48px;
 }
